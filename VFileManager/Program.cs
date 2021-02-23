@@ -62,8 +62,8 @@ namespace VFileManager
         static void Main(string[] args)
         {
             //Устанавливаем размер консольного окна и буфера
-            Console.SetWindowSize(APP_WIDTH, APP_HEIGHT+1);
-            Console.SetBufferSize(APP_WIDTH, APP_HEIGHT+1);
+            //Console.SetWindowSize(APP_WIDTH, APP_HEIGHT+1);
+            //Console.SetBufferSize(APP_WIDTH, APP_HEIGHT+1);
 
             PrintMainFrame();
             PrintMessage(2, 0, Messages.AppName);
@@ -123,8 +123,11 @@ namespace VFileManager
         /// <param name="message">Ключ в словаре сообщений</param>
         private static void PrintMessage(int column, int row, Messages message)
         {
-            Console.SetCursorPosition(column, row);
-            Console.Write(messages[message]);
+            if(messages.ContainsKey(message))
+            {
+                Console.SetCursorPosition(column, row);
+                Console.Write(messages[message]);
+            }
         }
 
         private static void PrintMainFrame()
@@ -160,6 +163,7 @@ namespace VFileManager
                     Console.Write(lineSymbols[1]);
                 }
                 Console.Write(lineSymbols[2]);
+                Console.WriteLine();
             }
         }
 
