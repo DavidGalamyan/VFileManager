@@ -35,6 +35,7 @@ namespace VFileManager
             EnterCommand,
             WrongCommand,
             CommandSymbol,
+            ListMessage,
         }
 
         /// <summary>Словарь сообщений</summary>
@@ -48,6 +49,7 @@ namespace VFileManager
             { Messages.EnterCommand, "Введите комманду" },
             { Messages.WrongCommand, "Неправильная команда. Повторите ввод." },
             { Messages.CommandSymbol, ":>" },
+            { Messages.ListMessage, "Up/Down arrows - change pages. Q - stop." },
         };
 
         #endregion
@@ -104,6 +106,7 @@ namespace VFileManager
             bool isExit = false;
             while (!isExit)
             {
+                PrintMessage(Areas.Info, Messages.EnterCommand);
                 switch (CommandInput())
                 {
                     case Commands.Help:
@@ -119,6 +122,7 @@ namespace VFileManager
                         break;
                     case Commands.WrongCommand:
                         PrintMessage(Areas.Info, Messages.WrongCommand);
+                        Console.ReadKey();
                         break;
 
                 }
@@ -265,27 +269,52 @@ namespace VFileManager
         private static void PrintFileList(List<string> fileList, int lines, int page = 1 )
         {
             ClearArea(Areas.Main);
+            PrintMessage(Areas.Info, Messages.ListMessage);
 
             int pages = fileList.Count / lines;//Количество страниц в списке
             if (pages * lines < fileList.Count) pages++;
 
-            if (page < 1) page = 1;
-            if (page > pages) page = pages;
-            int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
-
-            for (int i = number; i < number + lines; i++)
+            bool isExit = false;
+            while(!isExit)
             {
-                if (i < fileList.Count)
+                if (page < 1) page = 1;
+                if (page > pages) page = pages;
+                int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
+
+                for (int i = number; i < number + lines; i++)
                 {
-                    Console.SetCursorPosition(1, i - number + 1);
-                    Console.Write(string.Format(fileList[i]));
+                    if (i < fileList.Count)
+                    {
+                        Console.SetCursorPosition(1, i - number + 1);
+                        Console.Write(string.Format(fileList[i]));
+                    }
+                }
+
+                //Информация о номере выводимой страницы
+                string pageInfo = $" page {number / lines + 1} from {pages} ";
+                Console.SetCursorPosition(APP_WIDTH / 2 - pageInfo.Length / 2, INFO_AREA_LINE - 1);
+                Console.WriteLine(pageInfo);
+
+                //Обработка нажатий клавиатуры
+                Console.CursorVisible = false;
+                Console.SetCursorPosition(1, COMMAND_AREA_LINE);
+                ConsoleKeyInfo key = Console.ReadKey();
+                switch(key.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        page--;
+                        ClearArea(Areas.Main);
+                        break;
+                    case ConsoleKey.DownArrow:
+                        ClearArea(Areas.Main);
+                        page++;
+                        break;
+                    case ConsoleKey.Q:
+                        isExit = true;
+                        break;
                 }
             }
-
-            //Информация о номере выводимой страницы
-            string pageInfo = $" page {number / lines + 1} from {pages} ";
-            Console.SetCursorPosition(APP_WIDTH/2 - pageInfo.Length/2, INFO_AREA_LINE - 1);
-            Console.WriteLine(pageInfo);
+            Console.CursorVisible = true;
         }
 
         #endregion
