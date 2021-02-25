@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace VFileManager
 {
@@ -92,9 +93,10 @@ namespace VFileManager
         static void Main(string[] args)
         {
             //Устанавливаем размер консольного окна и буфера
-            //Console.SetWindowSize(APP_WIDTH, APP_HEIGHT+1);
+            Console.SetWindowSize(APP_WIDTH+1, APP_HEIGHT+1);
             //Console.SetBufferSize(APP_WIDTH, APP_HEIGHT+1);
 
+            Console.Clear();
             PrintMainFrame();
             PrintMessage(Areas.Info, Messages.EnterCommand);
 
@@ -109,8 +111,8 @@ namespace VFileManager
                         break;
                     case Commands.List:
                         fileList.Clear();
-                        SeekDirectoryRecursion("D:\\work\\test", fileList);
-                        PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, 2);
+                        SeekDirectoryRecursion("D:\\Work");
+                        PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, 1);
                         break;
                     case Commands.Exit:
                         isExit = true;
@@ -291,24 +293,57 @@ namespace VFileManager
         #region ---- WORK WITH FILES ----
 
         /// <summary>
-        /// рекурсивно просматривает заданный каталог на наличие каталогов и файлов
-        /// (пока без ограничений по глубине)
+        /// Формирует список каталогов для вывода на экран,
+        /// рекурсивно просматривая содержимое заданного каталога
         /// </summary>
         /// <param name="path">путь к просматриваемому каталогу</param>
-        /// <param name="seek">сюда записывается все найденное</param>
-        private static void SeekDirectoryRecursion(string path, List<string> fileList)
+        /// <param name="graphLine">строка содержащая графическую структуру каталогов
+        /// формируется во время работы метода</param>
+        /// <param name="level">уровень глубины катлогов от изначального</param>
+        public static void SeekDirectoryRecursion(string path, string graphLine = "", int level = 1)
         {
-            string[] allDirs = Directory.GetDirectories(path);
-            foreach (string dirName in allDirs)
-            {
-                fileList.Add($"{dirName}\n");
-                SeekDirectoryRecursion(dirName, fileList);
-            }
+            if (level == 1) fileList.Add(path);//Если мы на самом первом уровне, то добавляем главный каталог в список
 
-            string[] allFiles = Directory.GetFiles(path);
-            foreach (string fileName in allFiles)
+            try
             {
-                fileList.Add($"{fileName}\n");
+                DirectoryInfo[] dirContent = new DirectoryInfo(path).GetDirectories();//Получаеv содержимое заданного каталога
+
+                foreach (DirectoryInfo dir in dirContent) //Просматриваем все элементы в полученном списке
+                {
+                    if (dir.Attributes == FileAttributes.Directory) //Если текущий элемент каталог
+                    {
+
+                        //Записываем в список для вывода на экран очередной каталог
+                        if (dir == dirContent[dirContent.Length - 1]) { fileList.Add(graphLine + "└──" + dir + "\n"); }
+                        else { fileList.Add(graphLine + "├──" + dir + "\n"); }
+
+
+                        //Просмотр содержимого каталога если мы не глубже максимального уровня
+                        if (level < 2)
+                        {
+                            try
+                            {
+                                //Получаем содержимое текущего просматриваемого каталога
+                                DirectoryInfo[] currentDirContent = new DirectoryInfo(path + "\\" + dir).GetDirectories();
+                                if (currentDirContent.Length > 0)
+                                {
+                                    if (dir != dirContent[dirContent.Length - 1])
+                                        SeekDirectoryRecursion(path + "\\" + dir, graphLine + "│  ", level + 1);
+                                    else
+                                        SeekDirectoryRecursion(path + "\\" + dir, graphLine + "   ", level + 1);
+                                }
+                            }
+                            catch
+                            {
+                                //если каталог недоступен, то ничего не делаем (пока)
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                //если каталог недоступен, то ничего не делаем (пока)
             }
         }
 
