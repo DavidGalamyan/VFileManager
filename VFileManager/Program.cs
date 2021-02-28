@@ -31,12 +31,14 @@ namespace VFileManager
         enum Arguments
         {
             Page,//номер страницы
+            Level,//количество уровней (для вывода дерева каталогов)
         }
 
         /// <summary>Словарь тектовых ключей комманд</summary>
         private static readonly Dictionary<string, Arguments> arguments = new Dictionary<string, Arguments>
         {
             { "-p", Arguments.Page },
+            { "-l", Arguments.Level },
         };
 
 
@@ -47,6 +49,7 @@ namespace VFileManager
             AppName,
             EnterCommand,
             WrongCommand,
+            WrongPath,
             CommandSymbol,
             ListMessage,
         }
@@ -56,11 +59,15 @@ namespace VFileManager
         {
             { Messages.Help, "Список комманд:\n" +
                 "║help - вывод справки\n" +
-                "║list - вывод списка файлов и каталогов\n" +
+                "║list <path> [-p <int>] [-l <int>]- вывод списка файлов и каталогов\n" +
+                "║  path - путь к выводимому каталогу\n" +
+                "║  -p <int> - номер страницы, default=1\n" +
+                "║  -l <int> - количество уровней каталогов, default=2\n" +
                 "║exit - выход из программы\n" },
             { Messages.AppName, " VFileManager " },
-            { Messages.EnterCommand, "Введите комманду" },
+            { Messages.EnterCommand, "Введите комманду. (help - для списка комманд)" },
             { Messages.WrongCommand, "Неправильная команда. Повторите ввод." },
+            { Messages.WrongPath, "Неправильный путь. Повторите ввод." },
             { Messages.CommandSymbol, ":>" },
             { Messages.ListMessage, "Up/Down arrows - change pages. Q - stop." },
         };
@@ -77,7 +84,7 @@ namespace VFileManager
         }
 
         /// <summary>Ширина окна приложения</summary>
-        private const int APP_WIDTH = 80;
+        private const int APP_WIDTH = 120;
         /// <summary>Высота окна приложения</summary>
         private const int APP_HEIGHT = 24;
 
@@ -88,6 +95,10 @@ namespace VFileManager
             Info,
             CommanLine,
         }
+
+        /// <summary>Стандартная глубина для выводимого дерева каталогов</summary>
+        private const int MAX_LEVEL_DEFAULT = 2;
+
 
         /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
         private const int MAIN_AREA_LINE = 1;
@@ -129,9 +140,19 @@ namespace VFileManager
                             break;
                         case Commands.List:
                             fileList.Clear();
-                            int page = checkArguments(inputWords, Arguments.Page);
-                            SeekDirectoryRecursion("D:\\Work");
-                            PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, page);
+                            int page = findArguments(inputWords, Arguments.Page);
+                            int maxLevel = findArguments(inputWords, Arguments.Level);
+                            string path = FindPath(inputWords, 1);
+                            if(IsPathExist(path))
+                            {
+                                SeekDirectoryRecursion(path, maxLevel) ;
+                                PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, page);
+                            }
+                            else
+                            {
+                                PrintMessage(Areas.Info, Messages.WrongPath);
+                                Console.ReadKey();
+                            }
                             break;
                         case Commands.Exit:
                             isExit = true;
@@ -147,7 +168,7 @@ namespace VFileManager
             
         }
 
-        #region ---- INPUT ----
+        #region ---- WORK WITH INPUT ----
 
         /// <summary>Принимает ввод пользователя и разбивает его на части</summary>
         /// <returns>Список содержащий комманду пользователя и аргументы</returns>
@@ -194,22 +215,103 @@ namespace VFileManager
         /// <param name="inputWords">Список слов для анализа</param>
         /// <param name="argument">Искомый аргумент</param>
         /// <returns>Число следующее за аргументом или 0 если аргумент не найден</returns>
-        private static int checkArguments(List<string> inputWords, Arguments argument)
+        private static int findArguments(List<string> inputWords, Arguments argument)
         {
             int parameter = 0;//Возвращаемый параметр
             int index = 1;//Индекс проверяемого слова
             bool isFound = false;
             while (!isFound && index < inputWords.Count - 1)
             {
-                if(arguments.ContainsKey(inputWords[index]))//Если заданный аргумент в списке есть...
+                if(arguments.ContainsKey(inputWords[index]))//Если проверяемое слово присутствует в списке возможных аргументов...
                 {
-                    int.TryParse(inputWords[index+1], out parameter);//То проверяем следующее слово на числовое значение
-                    isFound = true;//Завершаем поиск
+                    if(arguments[inputWords[index]] == argument)//Если это нужный нам аргумент...
+                    {
+                        int.TryParse(inputWords[index + 1], out parameter);//То проверяем следующее слово на числовое значение
+                        isFound = true;//Завершаем поиск
+                    }
                 }
                 index++;
             }
 
             return parameter;
+        }
+
+        /// <summary>
+        /// Ищет путь к файлу или каталогу в списке слов
+        /// </summary>
+        /// <param name="inputWords">Список слов</param>
+        /// <param name="number">Порядковый номер пути который нужно вернуть</param>
+        /// <returns>Строку с найденым путем или пустую строку если путь не найден</returns>
+        private static string FindPath(List<string> inputWords, int number)
+        {
+            string path = string.Empty;//Здесь будет найденный путь
+            int index = 1;//Индекс проверяемого слова
+            int currentNumber = 0;//Текущий номер пути в списке аргументов
+            bool isFound = false;
+            while (!isFound && index < inputWords.Count)
+            {
+                if (!int.TryParse(inputWords[index], out _))//Если очередной аргумент не число...
+                {
+                    if(IsPathValid(inputWords[index]))//Если путь валидный...
+                    {
+                        currentNumber++;
+                        if (currentNumber == number)//Если это нужный нам путь по порядку, то заканчиваем поиск
+                        {
+                            path = inputWords[index];
+                            isFound = true;//Завершаем поиск
+                        }
+                    }
+                }
+                index++;
+            }
+            return path;
+        }
+
+        /// <summary>
+        /// Проверяет на правильность заданный путь к файлу
+        /// </summary>
+        /// <param name="dirName">Путь к файлу</param>
+        /// <returns>true, если путь правильный</returns>
+        private static bool IsPathValid(string path)
+        {
+            return (path != null) && (path.IndexOfAny(Path.GetInvalidPathChars()) == -1);
+        }
+
+        /// <summary>
+        /// Проверяет существует ли указанный файл
+        /// </summary>
+        /// <param name="fileName">Имя файла</param>
+        /// <returns>true, если файл существует</returns>
+        private static bool IsFileExist(string fileName)
+        {
+            bool isExist = false;
+            //Если имя файла не пустое и не содержит недопустимых символов
+            if (IsPathValid(fileName))
+                try
+                {
+                    FileInfo tempFileInfo = new FileInfo(fileName);
+                    isExist = true;
+                }
+                catch (NotSupportedException)
+                {
+                    isExist = false;
+                }
+            return isExist;
+        }
+
+        /// <summary>
+        /// Проверяет существует ли указанный каталог
+        /// </summary>
+        /// <param name="dirName">Имя каталога</param>
+        /// <returns>true, если каталог существует</returns>
+        private static bool IsPathExist(string dirName)
+        {
+            bool isExist = false;
+            //Если имя файла не пустое и не содержит недопустимых символов
+            if (IsPathValid(dirName))
+                if (Directory.Exists(dirName))
+                    isExist = true;
+            return isExist;
         }
 
 
@@ -394,11 +496,17 @@ namespace VFileManager
         /// рекурсивно просматривая содержимое заданного каталога
         /// </summary>
         /// <param name="path">путь к просматриваемому каталогу</param>
+        /// <param name="path">максимальная глубина сканирования каталогов</param>
         /// <param name="graphLine">строка содержащая графическую структуру каталогов
         /// формируется во время работы метода</param>
         /// <param name="level">уровень глубины катлогов от изначального</param>
-        public static void SeekDirectoryRecursion(string path, string graphLine = "", int level = 1)
+        public static void SeekDirectoryRecursion(string path, int maxLevel = 0, string graphLine = "", int level = 1)
         {
+            if (maxLevel == 0) maxLevel = MAX_LEVEL_DEFAULT;//Если максимальная глубина не задана, то ограничиваем дефолтным значением
+
+            //Превращаем путь вроде "d:" в "d:\", т.к. Directory.Exist() считает его валидным, а DirectoryInfo не совсем
+            if (path[path.Length - 1] == ':') path = path + '\\';
+
             if (level == 1) fileList.Add(path);//Если мы на самом первом уровне, то добавляем главный каталог в список
 
             try
@@ -416,7 +524,7 @@ namespace VFileManager
 
 
                         //Просмотр содержимого каталога если мы не глубже максимального уровня
-                        if (level < 2)
+                        if (level < maxLevel)
                         {
                             try
                             {
@@ -425,9 +533,9 @@ namespace VFileManager
                                 if (currentDirContent.Length > 0)
                                 {
                                     if (dir != dirContent[dirContent.Length - 1])
-                                        SeekDirectoryRecursion(path + "\\" + dir, graphLine + "│  ", level + 1);
-                                    else
-                                        SeekDirectoryRecursion(path + "\\" + dir, graphLine + "   ", level + 1);
+                                        SeekDirectoryRecursion(path + "\\" + dir, maxLevel, graphLine + "│  ", level + 1);
+                                        else
+                                        SeekDirectoryRecursion(path + "\\" + dir, maxLevel, graphLine + "   ", level + 1);
                                 }
                             }
                             catch
@@ -445,7 +553,7 @@ namespace VFileManager
         }
 
         #endregion
-    }
+}
 
 
 
