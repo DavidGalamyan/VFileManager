@@ -129,8 +129,9 @@ namespace VFileManager
                             break;
                         case Commands.List:
                             fileList.Clear();
+                            int page = checkArguments(inputWords, Arguments.Page);
                             SeekDirectoryRecursion("D:\\Work");
-                            PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, 1);
+                            PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, page);
                             break;
                         case Commands.Exit:
                             isExit = true;
@@ -185,6 +186,30 @@ namespace VFileManager
             if (commands.ContainsKey(input))
                 command = commands[input];
             return command;
+        }
+
+        /// <summary>
+        /// Проверяет список слов на наличие заданного аргумента и возвращает его значение
+        /// </summary>
+        /// <param name="inputWords">Список слов для анализа</param>
+        /// <param name="argument">Искомый аргумент</param>
+        /// <returns>Число следующее за аргументом или 0 если аргумент не найден</returns>
+        private static int checkArguments(List<string> inputWords, Arguments argument)
+        {
+            int parameter = 0;//Возвращаемый параметр
+            int index = 1;//Индекс проверяемого слова
+            bool isFound = false;
+            while (!isFound && index < inputWords.Count - 1)
+            {
+                if(arguments.ContainsKey(inputWords[index]))//Если заданный аргумент в списке есть...
+                {
+                    int.TryParse(inputWords[index+1], out parameter);//То проверяем следующее слово на числовое значение
+                    isFound = true;//Завершаем поиск
+                }
+                index++;
+            }
+
+            return parameter;
         }
 
 
