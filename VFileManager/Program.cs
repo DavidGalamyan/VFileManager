@@ -27,6 +27,19 @@ namespace VFileManager
             { "exit", Commands.Exit },
         };
 
+        /// <summary>Аргументы для комманд</summary>
+        enum Arguments
+        {
+            Page,//номер страницы
+        }
+
+        /// <summary>Словарь тектовых ключей комманд</summary>
+        private static readonly Dictionary<string, Arguments> arguments = new Dictionary<string, Arguments>
+        {
+            { "-p", Arguments.Page },
+        };
+
+
         /// <summary>Ключи словаря сообщений</summary>
         enum Messages
         {
@@ -107,25 +120,27 @@ namespace VFileManager
             while (!isExit)
             {
                 PrintMessage(Areas.Info, Messages.EnterCommand);
-                switch (CommandInput())
-                {
-                    case Commands.Help:
-                        PrintMessage(Areas.Main, Messages.Help);
-                        break;
-                    case Commands.List:
-                        fileList.Clear();
-                        SeekDirectoryRecursion("D:\\Work");
-                        PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, 1);
-                        break;
-                    case Commands.Exit:
-                        isExit = true;
-                        break;
-                    case Commands.WrongCommand:
-                        PrintMessage(Areas.Info, Messages.WrongCommand);
-                        Console.ReadKey();
-                        break;
+                List<string> inputWords = CommandInput();
+                if(inputWords.Count != 0)
+                    switch (checkCommand(inputWords[0]))
+                    {
+                        case Commands.Help:
+                            PrintMessage(Areas.Main, Messages.Help);
+                            break;
+                        case Commands.List:
+                            fileList.Clear();
+                            SeekDirectoryRecursion("D:\\Work");
+                            PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, 1);
+                            break;
+                        case Commands.Exit:
+                            isExit = true;
+                            break;
+                        case Commands.WrongCommand:
+                            PrintMessage(Areas.Info, Messages.WrongCommand);
+                            Console.ReadKey();
+                            break;
 
-                }
+                    }
 
             }
             
@@ -133,17 +148,45 @@ namespace VFileManager
 
         #region ---- INPUT ----
 
-        /// <summary>Принимает комманду от пользователя</summary>
-        /// <returns>Возвращает строку введеную пользователем</returns>
-        private static Commands CommandInput()
+        /// <summary>Принимает ввод пользователя и разбивает его на части</summary>
+        /// <returns>Список содержащий комманду пользователя и аргументы</returns>
+        private static List<string> CommandInput()
         {
             PrintMessage(Areas.CommanLine, Messages.CommandSymbol);
             string input = Console.ReadLine();
+            List<string> inputWords = new List<string>();//Список для комманд и аргументов
+            StringBuilder word = new StringBuilder();//Буфер для символов комманд
+            for (int i = 0; i < input.Length; i++)
+            {
+                if(input[i] != ' ')//Если очередной символ не разделитель, то записываем его в буфер
+                {
+                    word.Append(input[i]);
+                    if(i==input.Length-1)//Если это был конец строки то записываем буфер в список
+                        inputWords.Add(word.ToString());
+                }
+                else if(word.Length!=0)//Если дошли до разделителя, то записываем буфер в список (если он не пустой)
+                {
+                    inputWords.Add(word.ToString());
+                    word.Clear();
+                }
+            }
+
+            return inputWords;
+        }
+
+        /// <summary>
+        /// Проверяет какую команду содержит строка символов
+        /// </summary>
+        /// <param name="input">Строка символов для проверки</param>
+        /// <returns>Комманда</returns>
+        private static Commands checkCommand(string input)
+        {
             Commands command = Commands.WrongCommand;
             if (commands.ContainsKey(input))
                 command = commands[input];
             return command;
         }
+
 
         #endregion
 
