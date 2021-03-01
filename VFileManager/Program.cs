@@ -45,7 +45,6 @@ namespace VFileManager
         /// <summary>Ключи словаря сообщений</summary>
         enum Messages
         {
-            Help,
             AppName,
             EnterCommand,
             WrongCommand,
@@ -57,19 +56,27 @@ namespace VFileManager
         /// <summary>Словарь сообщений</summary>
         private static readonly Dictionary<Messages, string> messages = new Dictionary<Messages, string>
         {
-            { Messages.Help, "Список комманд:\n" +
-                "║help - вывод справки\n" +
-                "║list <path> [-p <int>] [-l <int>]- вывод списка файлов и каталогов\n" +
-                "║  path - путь к выводимому каталогу\n" +
-                "║  -p <int> - номер страницы, default=1\n" +
-                "║  -l <int> - количество уровней каталогов, default=2\n" +
-                "║exit - выход из программы\n" },
             { Messages.AppName, " VFileManager " },
             { Messages.EnterCommand, "Введите комманду. (help - для списка комманд)" },
             { Messages.WrongCommand, "Неправильная команда. Повторите ввод." },
             { Messages.WrongPath, "Неправильный путь. Повторите ввод." },
             { Messages.CommandSymbol, ":>" },
-            { Messages.ListMessage, "Up/Down arrows - change pages. Q - stop." },
+            { Messages.ListMessage, "pageUp/pageDown (or arrows) - change pages. Q/Esc - stop." },
+        };
+
+        /// <summary>Справка по коммандам
+        /// 0 элемент - команда
+        /// 1 элемент - параметр/параметры
+        /// 2 элемент - описание</summary>
+        private static readonly string[,] manual = new string[,]
+        {
+            { "", "", "Список комманд:" },
+            { "help", "", "- вывод справки" },
+            { "list ", "<path> [-p <int>] [-l <int>] ", "- вывод списка файлов и каталогов" },
+            { "", "     path ", "- путь к выводимому каталогу" },
+            { "", "     -p <int> ", "- номер страницы, default=1" },
+            { "", "     -l <int> ", "- количество уровней каталогов, default=2" },
+            { "exit ", "", "- выход из программы" },
         };
 
         #endregion
@@ -81,12 +88,14 @@ namespace VFileManager
         {
             Frame = (int)ConsoleColor.Green,
             Standart = (int)ConsoleColor.Gray,
+            Command = (int)ConsoleColor.Yellow,
+            Argument = (int)ConsoleColor.DarkYellow,
         }
 
         /// <summary>Ширина окна приложения</summary>
         private const int APP_WIDTH = 120;
         /// <summary>Высота окна приложения</summary>
-        private const int APP_HEIGHT = 24;
+        private const int APP_HEIGHT = 48;
 
         /// <summary>Экранные области приложения</summary>
         enum Areas
@@ -103,9 +112,9 @@ namespace VFileManager
         /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
         private const int MAIN_AREA_LINE = 1;
         /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
-        private const int INFO_AREA_LINE = 18;
+        private const int INFO_AREA_LINE = 42;
         /// <summary>Номер строки в которой происходит ввод координат</summary>
-        private const int COMMAND_AREA_LINE = 22;
+        private const int COMMAND_AREA_LINE = 46;
 
         #endregion
 
@@ -135,14 +144,15 @@ namespace VFileManager
                 if(inputWords.Count != 0)
                     switch (checkCommand(inputWords[0]))
                     {
-                        case Commands.Help:
-                            PrintMessage(Areas.Main, Messages.Help);
+                        case Commands.Help://Вывод справки
+                            PrintManual();
                             break;
-                        case Commands.List:
+
+                        case Commands.List://Вывод списка каталогов
                             fileList.Clear();
-                            int page = findArguments(inputWords, Arguments.Page);
-                            int maxLevel = findArguments(inputWords, Arguments.Level);
-                            string path = FindPath(inputWords, 1);
+                            int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
+                            int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
+                            string path = FindPath(inputWords, 1);//Каталог который сканируем
                             if(IsPathExist(path))
                             {
                                 SeekDirectoryRecursion(path, maxLevel) ;
@@ -154,10 +164,12 @@ namespace VFileManager
                                 Console.ReadKey();
                             }
                             break;
-                        case Commands.Exit:
+
+                        case Commands.Exit://Выход
                             isExit = true;
                             break;
-                        case Commands.WrongCommand:
+
+                        case Commands.WrongCommand://Неправильная команда
                             PrintMessage(Areas.Info, Messages.WrongCommand);
                             Console.ReadKey();
                             break;
@@ -385,6 +397,23 @@ namespace VFileManager
             }
         }
 
+        /// <summary>Выводит на экран справку по коммандам</summary>
+        private static void PrintManual()
+        {
+            ClearArea(Areas.Main);
+            for (int i = 0; i < manual.GetLength(0); i++)
+            {
+                Console.SetCursorPosition(1, MAIN_AREA_LINE + i);
+                Console.ForegroundColor = (ConsoleColor)Colors.Command;
+                Console.Write(manual[i, 0]);
+                Console.ForegroundColor = (ConsoleColor)Colors.Argument;
+                Console.Write(manual[i, 1]);
+                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+                Console.Write(manual[i, 2]);
+            }
+        }
+
+
         /// <summary>Выводит на экран рамку приложения</summary>
         private static void PrintMainFrame()
         {
@@ -472,14 +501,17 @@ namespace VFileManager
                 switch(key.Key)
                 {
                     case ConsoleKey.UpArrow:
+                    case ConsoleKey.PageUp:
                         page--;
                         ClearArea(Areas.Main);
                         break;
                     case ConsoleKey.DownArrow:
+                    case ConsoleKey.PageDown:
                         ClearArea(Areas.Main);
                         page++;
                         break;
                     case ConsoleKey.Q:
+                    case ConsoleKey.Escape:
                         isExit = true;
                         break;
                 }
