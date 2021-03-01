@@ -14,7 +14,8 @@ namespace VFileManager
         enum Commands
         {
             Help,//Вывод справки
-            List,//Вывод списка файлов
+            Dirs,//Вывод списка каталогов
+            Files,//Вывод списка каталогов
             Exit,//Выход из программы
             WrongCommand,//Неправильная комманда
         }
@@ -23,7 +24,8 @@ namespace VFileManager
         private static readonly Dictionary<string, Commands> commands = new Dictionary<string, Commands>
         {
             { "help", Commands.Help },
-            { "list", Commands.List },
+            { "dirs", Commands.Dirs },
+            { "files", Commands.Files },
             { "exit", Commands.Exit },
         };
 
@@ -72,10 +74,13 @@ namespace VFileManager
         {
             { "", "", "Список комманд:" },
             { "help", "", "- вывод справки" },
-            { "list ", "<path> [-p <int>] [-l <int>] ", "- вывод списка файлов и каталогов" },
+            { "dirs ", "<path> [-p <int>] [-l <int>] ", "- вывод списка каталогов" },
             { "", "     path ", "- путь к выводимому каталогу" },
             { "", "     -p <int> ", "- номер страницы, default=1" },
             { "", "     -l <int> ", "- количество уровней каталогов, default=2" },
+            { "files ", "[<path>] [-p <int>]", "- вывод списка файлов" },
+            { "", "      path ", "- путь к каталогу из файлов, если не указан то будет использован корень из списка каталогов" },
+            { "", "      -p <int> ", "- номер страницы, default=1" },
             { "exit ", "", "- выход из программы" },
         };
 
@@ -90,6 +95,7 @@ namespace VFileManager
             Standart = (int)ConsoleColor.Gray,
             Command = (int)ConsoleColor.Yellow,
             Argument = (int)ConsoleColor.DarkYellow,
+            Background = (int)ConsoleColor.Black,
         }
 
         /// <summary>Ширина окна приложения</summary>
@@ -100,7 +106,8 @@ namespace VFileManager
         /// <summary>Экранные области приложения</summary>
         enum Areas
         {
-            Main,
+            DirList,
+            FileList,
             Info,
             CommanLine,
         }
@@ -109,8 +116,10 @@ namespace VFileManager
         private const int MAX_LEVEL_DEFAULT = 2;
 
 
-        /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
-        private const int MAIN_AREA_LINE = 1;
+        /// <summary>Номер строки в которой происходит вывод списка каталогов</summary>
+        private const int DIRLIST_AREA_LINE = 1;
+        /// <summary>Номер строки в которой происходит вывод списка файлов</summary>
+        private const int FILELIST_AREA_LINE = 30;
         /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
         private const int INFO_AREA_LINE = 42;
         /// <summary>Номер строки в которой происходит ввод координат</summary>
@@ -120,7 +129,9 @@ namespace VFileManager
 
         #region ---- FIELDS & PROPERTIES ----
 
-        /// <summary>Сюда будет помещаться список файлов и каталогов</summary>
+        /// <summary>Сюда будет помещаться список каталогов</summary>
+        private static List<string> dirList = new List<string>();
+        /// <summary>Сюда будет помещаться список файлов</summary>
         private static List<string> fileList = new List<string>();
 
         #endregion
@@ -148,21 +159,42 @@ namespace VFileManager
                             PrintManual();
                             break;
 
-                        case Commands.List://Вывод списка каталогов
-                            fileList.Clear();
+                        case Commands.Dirs://Вывод списка каталогов
                             int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
                             int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
                             string path = FindPath(inputWords, 1);//Каталог который сканируем
                             if(IsPathExist(path))
                             {
+                                dirList.Clear();
                                 SeekDirectoryRecursion(path, maxLevel) ;
-                                PrintFileList(fileList, INFO_AREA_LINE - MAIN_AREA_LINE - 1, page);
+                                PrintDirList(dirList, page);
                             }
                             else
                             {
                                 PrintMessage(Areas.Info, Messages.WrongPath);
                                 Console.ReadKey();
                             }
+                            break;
+
+                        case Commands.Files://Вывод списка файлов
+                            page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
+                            path = FindPath(inputWords, 1);//Каталог который сканируем
+                            if (path == string.Empty)
+                                if (dirList.Count != 0)
+                                    path = dirList[0];
+
+                            if (IsPathExist(path))
+                            {
+                                fileList.Clear();
+                                SeekDirectoryForFiles(path);
+                                PrintFileList(fileList, page);
+                            }
+                            else
+                            {
+                                PrintMessage(Areas.Info, Messages.WrongPath);
+                                Console.ReadKey();
+                            }
+
                             break;
 
                         case Commands.Exit://Выход
@@ -339,8 +371,12 @@ namespace VFileManager
             int lastRow = 0;
             switch(area)
             {
-                case Areas.Main:
-                    firstRow = MAIN_AREA_LINE;
+                case Areas.DirList:
+                    firstRow = DIRLIST_AREA_LINE;
+                    lastRow = FILELIST_AREA_LINE - 1;
+                    break;
+                case Areas.FileList:
+                    firstRow = FILELIST_AREA_LINE;
                     lastRow = INFO_AREA_LINE - 1;
                     break;
                 case Areas.Info:
@@ -355,6 +391,13 @@ namespace VFileManager
 
             for (int i = firstRow; i < lastRow; i++)
                 ClearLine(1, i, APP_WIDTH - 2);
+
+            //очистка информации о странице
+            Console.SetCursorPosition(0, lastRow);
+            Console.ForegroundColor = (ConsoleColor)Colors.Frame;
+            PrintFrameLine((lastRow == APP_HEIGHT - 1) ? "╚═╝" : "╠═╣");
+            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+
         }
 
         /// <summary>Очищает в консоли указанную строку</summary>
@@ -382,8 +425,11 @@ namespace VFileManager
                 int row = 1;
                 switch (area)
                 {
-                    case Areas.Main:
-                        row = MAIN_AREA_LINE;
+                    case Areas.DirList:
+                        row = DIRLIST_AREA_LINE;
+                        break;
+                    case Areas.FileList:
+                        row = FILELIST_AREA_LINE;
                         break;
                     case Areas.Info:
                         row = INFO_AREA_LINE;
@@ -400,10 +446,10 @@ namespace VFileManager
         /// <summary>Выводит на экран справку по коммандам</summary>
         private static void PrintManual()
         {
-            ClearArea(Areas.Main);
+            ClearArea(Areas.DirList);
             for (int i = 0; i < manual.GetLength(0); i++)
             {
-                Console.SetCursorPosition(1, MAIN_AREA_LINE + i);
+                Console.SetCursorPosition(1, DIRLIST_AREA_LINE + i);
                 Console.ForegroundColor = (ConsoleColor)Colors.Command;
                 Console.Write(manual[i, 0]);
                 Console.ForegroundColor = (ConsoleColor)Colors.Argument;
@@ -423,8 +469,13 @@ namespace VFileManager
             Console.ForegroundColor = (ConsoleColor)Colors.Frame;
             //верхняя строка            
             PrintFrameLine("╔═╗");
-            //область вывода списка файлов/каталогов
-            for (int r = MAIN_AREA_LINE; r < INFO_AREA_LINE - 1; r++)
+            //область вывода списка каталогов
+            for (int r = DIRLIST_AREA_LINE; r < FILELIST_AREA_LINE - 1; r++)
+                PrintFrameLine("║ ║");
+            //разделитель областей
+            PrintFrameLine("╠═╣");
+            //область вывода списка файлов
+            for (int r = FILELIST_AREA_LINE; r < INFO_AREA_LINE - 1; r++)
                 PrintFrameLine("║ ║");
             //разделитель областей
             PrintFrameLine("╠═╣");
@@ -462,30 +513,101 @@ namespace VFileManager
         /// <summary>
         /// Выводит на экран список файлов
         /// </summary>
-        /// <param name="fileList">Список файлов для вывода на экран</param>
+        /// <param name="dirList">Список файлов для вывода на экран</param>
         /// <param name="lines">Количество поизций одновременно выводимых на экран</param>
         /// <param name="page">Номер страницы которую необходимо вывести на экран</param>
-        private static void PrintFileList(List<string> fileList, int lines, int page = 1 )
+        private static void PrintDirList(List<string> dirList, int page = 1 )
         {
-            ClearArea(Areas.Main);
+            ClearArea(Areas.DirList);
             PrintMessage(Areas.Info, Messages.ListMessage);
 
-            int pages = fileList.Count / lines;//Количество страниц в списке
-            if (pages * lines < fileList.Count) pages++;
+
+            int lines = FILELIST_AREA_LINE - DIRLIST_AREA_LINE - 2;//Количество линий списка выводимых на экран за один раз
+            int pages = (dirList.Count - 1) / lines;//Количество страниц в списке
+            if (pages * lines < (dirList.Count - 1)) pages++;
 
             bool isExit = false;
             while(!isExit)
             {
+                Console.BackgroundColor = (ConsoleColor)Colors.Command;
+                Console.ForegroundColor = (ConsoleColor)Colors.Background;
+                Console.SetCursorPosition(1, DIRLIST_AREA_LINE);//Вывод названия корневого каталога в первой строке
+                Console.Write(string.Format(dirList[0]));
+                Console.BackgroundColor = (ConsoleColor)Colors.Background;
+                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+
                 if (page < 1) page = 1;
                 if (page > pages) page = pages;
                 int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
 
                 for (int i = number; i < number + lines; i++)
                 {
-                    if (i < fileList.Count)
+                    if (i < (dirList.Count-1))
                     {
-                        Console.SetCursorPosition(1, i - number + 1);
-                        Console.Write(string.Format(fileList[i]));
+                        Console.SetCursorPosition(1, i - number + DIRLIST_AREA_LINE + 1);
+                        Console.Write(string.Format(dirList[i+1]));
+                    }
+                }
+
+                //Информация о номере выводимой страницы
+                string pageInfo = $" page {number / lines + 1} from {pages} ";
+                Console.SetCursorPosition(APP_WIDTH / 2 - pageInfo.Length / 2, FILELIST_AREA_LINE - 1);
+                Console.WriteLine(pageInfo);
+
+                //Обработка нажатий клавиатуры
+                Console.CursorVisible = false;
+                Console.SetCursorPosition(1, COMMAND_AREA_LINE);
+                ConsoleKeyInfo key = Console.ReadKey();
+                switch(key.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                    case ConsoleKey.PageUp:
+                        page--;
+                        ClearArea(Areas.DirList);
+                        break;
+                    case ConsoleKey.DownArrow:
+                    case ConsoleKey.PageDown:
+                        ClearArea(Areas.DirList);
+                        page++;
+                        break;
+                    case ConsoleKey.Q:
+                    case ConsoleKey.Escape:
+                        isExit = true;
+                        break;
+                }
+            }
+            Console.CursorVisible = true;
+        }
+
+        private static void PrintFileList(List<string> fileList, int page = 1)
+        {
+            ClearArea(Areas.FileList);
+            PrintMessage(Areas.Info, Messages.ListMessage);
+
+            int lines = INFO_AREA_LINE - FILELIST_AREA_LINE - 2;//Количество линий списка выводимых на экран за один раз
+            int pages = (fileList.Count - 1) / lines;//Количество страниц в списке
+            if (pages * lines < (fileList.Count - 1)) pages++;
+
+            bool isExit = false;
+            while (!isExit)
+            {
+                Console.BackgroundColor = (ConsoleColor)Colors.Command;
+                Console.ForegroundColor = (ConsoleColor)Colors.Background;
+                Console.SetCursorPosition(1, FILELIST_AREA_LINE);//Вывод названия корневого каталога в первой строке
+                Console.Write(string.Format(fileList[0]));
+                Console.BackgroundColor = (ConsoleColor)Colors.Background;
+                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+
+                if (page < 1) page = 1;
+                if (page > pages) page = pages;
+                int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
+
+                for (int i = number; i < number + lines; i++)
+                {
+                    if (i < (fileList.Count-1))
+                    {
+                        Console.SetCursorPosition(1, i - number + FILELIST_AREA_LINE + 1);
+                        Console.Write(string.Format(fileList[i+1]));
                     }
                 }
 
@@ -498,16 +620,16 @@ namespace VFileManager
                 Console.CursorVisible = false;
                 Console.SetCursorPosition(1, COMMAND_AREA_LINE);
                 ConsoleKeyInfo key = Console.ReadKey();
-                switch(key.Key)
+                switch (key.Key)
                 {
                     case ConsoleKey.UpArrow:
                     case ConsoleKey.PageUp:
                         page--;
-                        ClearArea(Areas.Main);
+                        ClearArea(Areas.FileList);
                         break;
                     case ConsoleKey.DownArrow:
                     case ConsoleKey.PageDown:
-                        ClearArea(Areas.Main);
+                        ClearArea(Areas.FileList);
                         page++;
                         break;
                     case ConsoleKey.Q:
@@ -517,6 +639,7 @@ namespace VFileManager
                 }
             }
             Console.CursorVisible = true;
+
         }
 
         #endregion
@@ -539,7 +662,7 @@ namespace VFileManager
             //Превращаем путь вроде "d:" в "d:\", т.к. Directory.Exist() считает его валидным, а DirectoryInfo не совсем
             if (path[path.Length - 1] == ':') path = path + '\\';
 
-            if (level == 1) fileList.Add(path);//Если мы на самом первом уровне, то добавляем главный каталог в список
+            if (level == 1) dirList.Add(path);//Если мы на самом первом уровне, то добавляем главный каталог в список
 
             try
             {
@@ -551,8 +674,8 @@ namespace VFileManager
                     {
 
                         //Записываем в список для вывода на экран очередной каталог
-                        if (dir == dirContent[dirContent.Length - 1]) { fileList.Add(graphLine + "└──" + dir + "\n"); }
-                        else { fileList.Add(graphLine + "├──" + dir + "\n"); }
+                        if (dir == dirContent[dirContent.Length - 1]) { dirList.Add(graphLine + "└──" + dir + "\n"); }
+                        else { dirList.Add(graphLine + "├──" + dir + "\n"); }
 
 
                         //Просмотр содержимого каталога если мы не глубже максимального уровня
@@ -584,8 +707,35 @@ namespace VFileManager
             }
         }
 
+
+        /// <summary>
+        /// Сканирует файлы в указанном каталоге и помещает их в список
+        /// </summary>
+        /// <param name="path">Путь к каталогу</param>
+        public static void SeekDirectoryForFiles(string path)
+        {
+            //Превращаем путь вроде "d:" в "d:\", т.к. Directory.Exist() считает его валидным, а DirectoryInfo не совсем
+            if (path[path.Length - 1] == ':') path = path + '\\';
+
+            fileList.Add(path);//Если мы на самом первом уровне, то добавляем главный каталог в список
+
+            try
+            {
+                FileInfo[] dirContent = new DirectoryInfo(path).GetFiles();//Получаеv содержимое заданного каталога
+                foreach (FileInfo file in dirContent)
+                {
+                    fileList.Add(file.Name);
+                }
+            }
+            catch
+            {
+                //если каталог недоступен, то ничего не делаем (пока)
+            }
+        }
+
+
         #endregion
-}
+    }
 
 
 
