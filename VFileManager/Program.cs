@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace VFileManager
 {
@@ -9,6 +11,9 @@ namespace VFileManager
     class Program
     {
         #region ---- STRING CONSTANTS ----
+
+        /// <summary>Имя файла для хранения настроек приложения</summary>
+        private static string settingsFile = "settings.json";
 
         /// <summary>Команды выполняемые приложением</summary>
         enum Commands
@@ -107,6 +112,10 @@ namespace VFileManager
             CommanLine,
         }
 
+        #endregion
+
+        #region ---- SETTINGS ----
+
         #region -- DEFAULT SETTINGS --
 
         /// <summary>Ширина окна приложения</summary>
@@ -132,7 +141,7 @@ namespace VFileManager
         #region -- APP SETTINGS --
 
         /// <summary>Ключи для словаря настроек</summary>
-        enum Settings
+        public enum Settings
         {
             AppWidth,
             AppHeight,
@@ -155,8 +164,28 @@ namespace VFileManager
             { Settings.CommandAreaLine, COMMAND_AREA_LINE},
         };
 
-        #endregion
+        /// <summary>Используется для сохранения/загрузки настроек приложения</summary>
+        public class Parameter
+        {
+            /// <summary>Имя параметра</summary>
+            public string Key { get; set; }
+            /// <summary>Значение параметра</summary>
+            public string Value { get; set; }
 
+            public Parameter()
+            {
+                this.Key = string.Empty;
+                this.Value = string.Empty;
+            }
+
+            public Parameter(String key, int value)
+            {
+                this.Key = key;
+                this.Value = value.ToString();
+            }
+        }
+
+        #endregion
 
         #endregion
 
@@ -171,6 +200,8 @@ namespace VFileManager
 
         static void Main(string[] args)
         {
+            Init(settingsFile);//Инициализация
+
             //Устанавливаем размер консольного окна и буфера
             Console.SetWindowSize(settings[Settings.AppWidth]+1, settings[Settings.AppHeight] + 1);
             //Console.SetBufferSize(APP_WIDTH, APP_HEIGHT+1);
@@ -243,6 +274,50 @@ namespace VFileManager
 
             }
             
+        }
+
+        /// <summary>
+        /// Инициализация приложения
+        /// </summary>
+        /// <param name="filename">Имя файла с настройками</param>
+        private static void Init(string filename)
+        {
+            
+            //Если файл настроек отсутствует, то создаем его и сохраняем туда дефолтные настройки
+            if (!File.Exists(filename))
+                SaveSettings(filename);
+        }
+
+        /// <summary>
+        /// Сохранение настроек приложения
+        /// </summary>
+        /// <param name="filename">Имя файла с настройками</param>
+        private static void SaveSettings(string filename)
+        {
+            //Список для работы с настройками приложения
+            List<Parameter> parameters = new List<Parameter>();
+
+            //Перекидываем все параметры в промежуточный список
+            foreach (Settings key in Enum.GetValues(typeof(Settings)))
+            {
+                if (settings.ContainsKey(key))
+                {
+                    parameters.Add(new Parameter(key.ToString(), settings[key]));
+                }
+            }
+
+            //Сериализуем его
+            string line = JsonSerializer.Serialize(parameters);
+            //И сохраняем на диск
+            try
+            {
+                File.WriteAllText(filename, line);
+            }
+            catch
+            {
+                PrintMessage(Areas.Info, Messages.WrongCommand);
+            }
+
         }
 
         #region ---- WORK WITH INPUT ----
