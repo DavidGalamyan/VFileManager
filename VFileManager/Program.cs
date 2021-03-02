@@ -15,6 +15,11 @@ namespace VFileManager
         /// <summary>Имя файла для хранения настроек приложения</summary>
         private static string settingsFile = "settings.json";
 
+        /// <summary>Стандартный разделитель между словаме в строке ввода</summary>
+        private const char delimiterShort = ' ';
+        /// <summary>Разделитель для длинных имен файлов</summary>
+        private const char delimiterLong = '"';
+
         /// <summary>Команды выполняемые приложением</summary>
         enum Commands
         {
@@ -413,21 +418,42 @@ namespace VFileManager
             string input = Console.ReadLine();
             List<string> inputWords = new List<string>();//Список для комманд и аргументов
             StringBuilder word = new StringBuilder();//Буфер для символов комманд
+            bool isQuoteOpened = false;//Флаг того, что были пройдены открывающие кавычки
             for (int i = 0; i < input.Length; i++)
             {
-                if(input[i] != ' ')//Если очередной символ не разделитель, то записываем его в буфер
+                if (input[i] != delimiterShort && input[i] != delimiterLong)//Если текущий символ не разделитель
                 {
-                    word.Append(input[i]);
-                    if(i==input.Length-1)//Если это был конец строки то записываем буфер в список
+                    word.Append(input[i]);//Записываем его в буфер
+                    if (i == input.Length - 1)//Если это был конец строки то записываем буфер в список
                         inputWords.Add(word.ToString());
                 }
-                else if(word.Length!=0)//Если дошли до разделителя, то записываем буфер в список (если он не пустой)
+                else if (input[i] == delimiterLong)//Если текущий символ разделитель для пути с пробелами (кавычки)
                 {
-                    inputWords.Add(word.ToString());
-                    word.Clear();
+                    if(isQuoteOpened)//Если открывающие кавычки уже были пройдены
+                    {
+                        //Записываем буфер в список и очищаем
+                        inputWords.Add(word.ToString());
+                        word.Clear();
+                        //Сбрасываем флаг, что были пройдены окрывающие кавычки
+                        isQuoteOpened = false;
+                    }
+                    else//Если открывающие кавычки не были пройдены
+                    {
+                        //Устанавливаем флаг, что были пройдены окрывающие кавычки
+                        isQuoteOpened = true;
+                    }
+                }
+                else//Если это обычный разделитель (пробел)
+                {
+                    if(isQuoteOpened)//Есди сейчас анализируется слово в кавычках, то пробел тоже идет в буфер
+                        word.Append(input[i]);
+                    else if (word.Length != 0)//Если нет, то записываем буфер в список (если он не пустой)
+                    {
+                        inputWords.Add(word.ToString());
+                        word.Clear();
+                    }
                 }
             }
-
             return inputWords;
         }
 
@@ -732,14 +758,15 @@ namespace VFileManager
                 if (page > pages) page = pages;
                 int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
 
-                for (int i = number; i < number + lines; i++)
-                {
-                    if (i < (dirList.Count-1))
+                if(pages>0)
+                    for (int i = number; i < number + lines; i++)
                     {
-                        Console.SetCursorPosition(1, i - number + settings[Settings.DirListAreaLine] + 1);
-                        Console.Write(string.Format(dirList[i+1]));
+                        if (i < (dirList.Count - 1))
+                        {
+                            Console.SetCursorPosition(1, i - number + settings[Settings.DirListAreaLine] + 1);
+                            Console.Write(string.Format(dirList[i + 1]));
+                        }
                     }
-                }
 
                 //Информация о номере выводимой страницы
                 string pageInfo = $" page {number / lines + 1} from {pages} ";
@@ -800,14 +827,15 @@ namespace VFileManager
                 if (page > pages) page = pages;
                 int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
 
-                for (int i = number; i < number + lines; i++)
-                {
-                    if (i < (fileList.Count-1))
+                if (pages > 0)
+                    for (int i = number; i < number + lines; i++)
                     {
-                        Console.SetCursorPosition(1, i - number + settings[Settings.FileListAreaLine] + 1);
-                        Console.Write(string.Format(fileList[i+1]));
+                        if (i < (fileList.Count - 1))
+                        {
+                            Console.SetCursorPosition(1, i - number + settings[Settings.FileListAreaLine] + 1);
+                            Console.Write(string.Format(fileList[i + 1]));
+                        }
                     }
-                }
 
                 //Информация о номере выводимой страницы
                 string pageInfo = $" page {number / lines + 1} from {pages} ";
