@@ -11,7 +11,6 @@ namespace VFileManager
     class Program
     {
         #region ---- STRING CONSTANTS ----
-
         /// <summary>Имя файла для хранения настроек приложения</summary>
         private static string settingsFile = "settings.json";
 
@@ -96,6 +95,18 @@ namespace VFileManager
 
         #endregion
 
+        #region ---- FIELDS & PROPERTIES ----
+
+        private static Settings settings = new Settings(settingsFile);
+
+        /// <summary>Сюда будет помещаться список каталогов</summary>
+        private static List<string> dirList = new List<string>();
+        /// <summary>Сюда будет помещаться список файлов</summary>
+        private static List<string> fileList = new List<string>();
+
+        #endregion
+
+
         #region ---- NUMERIC CONSTANTS ----
 
         /// <summary>Цвета для различных элементов интерфейса</summary>
@@ -119,101 +130,9 @@ namespace VFileManager
 
         #endregion
 
-        #region ---- SETTINGS ----
-
-        #region -- DEFAULT SETTINGS --
-
-        /// <summary>Ширина окна приложения</summary>
-        private const int APP_WIDTH = 120;
-        /// <summary>Высота окна приложения</summary>
-        private const int APP_HEIGHT = 40;
-
-        /// <summary>Стандартная глубина для выводимого дерева каталогов</summary>
-        private const int MAX_LEVEL_DEFAULT = 2;
-
-
-        /// <summary>Номер строки в которой происходит вывод списка каталогов</summary>
-        private const int DIRLIST_AREA_LINE = 1;
-        /// <summary>Номер строки в которой происходит вывод списка файлов</summary>
-        private const int FILELIST_AREA_LINE = 20;
-        /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
-        private const int INFO_AREA_LINE = 34;
-        /// <summary>Номер строки в которой происходит ввод координат</summary>
-        private const int COMMAND_AREA_LINE = 38;
-
-        #endregion
-
-        #region -- APP SETTINGS --
-
-        /// <summary>Дефолтное значение пути просматриваемого каталога</summary>
-        private const string DEFAULT_PATH = "C:\\";
-
-        /// <summary>Здесь будем хранить последний заданный путь для просмотра</summary>
-        private static string lastPath = DEFAULT_PATH;
-
-        /// <summary>Ключи для словаря настроек</summary>
-        public enum Settings
-        {
-            AppWidth,
-            AppHeight,
-            MaxLevelDefault,
-            DirListAreaLine,
-            FileListAreaLine,
-            InfoAreaLine,
-            CommandAreaLine,
-            LastPath,//Ключ заглушка, в словаре настроек не используется
-        }
-
-        /// <summary>Словарь содержащий настройки приложения</summary>
-        private static Dictionary<Settings, int> settings = new Dictionary<Settings, int>
-        {
-            { Settings.AppWidth, APP_WIDTH },
-            { Settings.AppHeight, APP_HEIGHT },
-            { Settings.MaxLevelDefault, MAX_LEVEL_DEFAULT},
-            { Settings.DirListAreaLine, DIRLIST_AREA_LINE},
-            { Settings.FileListAreaLine, FILELIST_AREA_LINE},
-            { Settings.InfoAreaLine, INFO_AREA_LINE},
-            { Settings.CommandAreaLine, COMMAND_AREA_LINE},
-        };
-
-        /// <summary>Используется для сохранения/загрузки настроек приложения
-        /// чтобы в файле настроек было более удобное текстовое представление параметров</summary>
-        public class Parameter
-        {
-            /// <summary>Имя параметра</summary>
-            public string Key { get; set; }
-            /// <summary>Значение параметра</summary>
-            public string Value { get; set; }
-
-            public Parameter()
-            {
-                this.Key = string.Empty;
-                this.Value = string.Empty;
-            }
-
-            public Parameter(string key, string value)
-            {
-                this.Key = key;
-                this.Value = value;
-            }
-        }
-
-        #endregion
-
-        #endregion
-
-        #region ---- FIELDS & PROPERTIES ----
-
-        /// <summary>Сюда будет помещаться список каталогов</summary>
-        private static List<string> dirList = new List<string>();
-        /// <summary>Сюда будет помещаться список файлов</summary>
-        private static List<string> fileList = new List<string>();
-
-        #endregion
-
         static void Main(string[] args)
         {
-            Init(settingsFile);//Инициализация
+            Init();//Инициализация
 
             Console.Clear();
             PrintMainFrame();
@@ -236,14 +155,14 @@ namespace VFileManager
                             int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
                             int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
                             string path = FindPath(inputWords, 1);//Каталог который сканируем
-                            if (path == string.Empty) path = lastPath;//Если каталог не задан, то используем последний каталог
+                            if (path == string.Empty) path = settings.LastPath;//Если каталог не задан, то используем последний каталог
                             if(IsPathExist(path))
                             {
                                 dirList.Clear();
                                 SeekDirectoryRecursion(path, maxLevel) ;
                                 PrintDirList(dirList, page);
-                                lastPath = path;
-                                SaveSettings(settingsFile);
+                                settings.LastPath = path;
+                                settings.SaveSettings();
                             }
                             else
                             {
@@ -260,7 +179,7 @@ namespace VFileManager
                                 if (dirList.Count != 0)
                                     path = dirList[0];
                                 else
-                                    path = lastPath;
+                                    path = settings.LastPath;
                             }
 
                             if (IsPathExist(path))
@@ -292,118 +211,20 @@ namespace VFileManager
             
         }
 
-        #region ---- INITIALIZATION ----
+        #region ---- INIT ----
 
         /// <summary>
         /// Инициализация приложения
         /// </summary>
         /// <param name="filename">Имя файла с настройками</param>
-        private static void Init(string filename)
+        private static void Init()
         {
-            LoadSettings(filename);
+            settings.LoadSettings();
 
             //Устанавливаем размер консольного окна и буфера
-            Console.SetWindowSize(settings[Settings.AppWidth] + 1, settings[Settings.AppHeight] + 1);
-            Console.SetBufferSize(settings[Settings.AppWidth] + 1, settings[Settings.AppHeight] + 1);
+            Console.SetWindowSize(settings.AppWidth + 1, settings.AppHeight + 1);
+            //Console.SetBufferSize(settings[SettingsKeys.AppWidth] + 1, settings[SettingsKeys.AppHeight] + 1);
 
-        }
-
-        /// <summary>
-        /// Сохранение настроек приложения
-        /// </summary>
-        /// <param name="filename">Имя файла с настройками</param>
-        private static void SaveSettings(string filename)
-        {
-            //Список для работы с настройками приложения
-            List<Parameter> parameters = new List<Parameter>();
-
-            //Записываем путь к каталогу в начало списка
-            parameters.Add(new Parameter(Settings.LastPath.ToString(), lastPath));
-
-            //Перекидываем все параметры в промежуточный список
-            foreach (Settings key in Enum.GetValues(typeof(Settings)))
-            {
-                if (settings.ContainsKey(key))
-                {
-                    parameters.Add(new Parameter(key.ToString(), settings[key].ToString()));
-                }
-            }
-
-            //Сериализуем его
-            string line = JsonSerializer.Serialize(parameters);
-            //И сохраняем на диск
-            try
-            {
-                File.WriteAllText(filename, line);
-            }
-            catch
-            {
-                //!TODO сделать обработку исключения
-            }
-
-        }
-
-        private static void LoadSettings(string filename)
-        {
-            //Список для работы с настройками приложения
-            List<Parameter> parameters = new List<Parameter>();
-
-            if (File.Exists(filename))
-            {
-                try
-                {
-                    parameters = JsonSerializer.Deserialize<List<Parameter>>(File.ReadAllText(filename));
-                    ReadSettings(parameters);
-                }
-                catch
-                {
-                    //!TODO не удалось прочитать файл
-                }
-            }
-            else
-            {
-                SaveSettings(filename);
-            }
-
-
-        }
-
-        private static void ReadSettings(List<Parameter> parameters)
-        {
-
-            lastPath = parameters[0].Value;
-
-            foreach (Parameter param in parameters)
-            {
-                Settings key;//Сюда пойдет ключ
-                int value;//Сюда пойдет значение
-                bool isValueValid;//Проверка на то, что значение парсится
-                try
-                {
-                    key = (Settings)Enum.Parse(typeof(Settings), param.Key);//Получили ключ (если не верный, то в обработку эксепшена)
-                    isValueValid = int.TryParse(param.Value, out value);//Попытались получить значение
-                    if (isValueValid)//Если получилось, то заносим настройку в список настроек
-                    {
-                        settings[key] = value;
-                    }
-                        
-                }
-                catch
-                {
-                    //!TODO если такого ключа нет среди настроек
-                }
-            }
-
-            //Проверка некоторых параметров на валидность
-            //!TODO добавить больше проверок
-            if(settings[Settings.AppWidth] < APP_WIDTH)//Ширина приложения
-                settings[Settings.AppWidth] = APP_WIDTH;
-            if(settings[Settings.AppHeight] < APP_HEIGHT)//Высота приложения
-                settings[Settings.AppHeight] = APP_HEIGHT;
-            if (settings[Settings.CommandAreaLine] > settings[Settings.AppHeight] - 2)//Положение командной строки
-                settings[Settings.CommandAreaLine] = settings[Settings.AppHeight] - 2;
-            if (settings[Settings.InfoAreaLine] > settings[Settings.CommandAreaLine] - 4)//Положение информационной строки
-                settings[Settings.InfoAreaLine] = settings[Settings.CommandAreaLine] - 4;
         }
 
         #endregion
@@ -589,30 +410,30 @@ namespace VFileManager
             switch(area)
             {
                 case Areas.DirList:
-                    firstRow = settings[Settings.DirListAreaLine];
-                    lastRow = settings[Settings.FileListAreaLine] - 1;
+                    firstRow = settings.DirListAreaLine;
+                    lastRow = settings.FileListAreaLine - 1;
                     break;
                 case Areas.FileList:
-                    firstRow = settings[Settings.FileListAreaLine];
-                    lastRow = settings[Settings.InfoAreaLine] - 1;
+                    firstRow = settings.FileListAreaLine;
+                    lastRow = settings.InfoAreaLine - 1;
                     break;
                 case Areas.Info:
-                    firstRow = settings[Settings.InfoAreaLine];
-                    lastRow = settings[Settings.CommandAreaLine] - 1;
+                    firstRow = settings.InfoAreaLine;
+                    lastRow = settings.CommandAreaLine - 1;
                     break;
                 case Areas.CommanLine:
-                    firstRow = settings[Settings.CommandAreaLine];
-                    lastRow = settings[Settings.AppHeight] - 1;
+                    firstRow = settings.CommandAreaLine;
+                    lastRow = settings.AppHeight - 1;
                     break;
             }
 
             for (int i = firstRow; i < lastRow; i++)
-                ClearLine(1, i, settings[Settings.AppWidth] - 2);
+                ClearLine(1, i, settings.AppWidth - 2);
 
             //очистка информации о странице
             Console.SetCursorPosition(0, lastRow);
             Console.ForegroundColor = (ConsoleColor)Colors.Frame;
-            PrintFrameLine((lastRow == settings[Settings.AppHeight] - 1) ? "╚═╝" : "╠═╣");
+            PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
             Console.ForegroundColor = (ConsoleColor)Colors.Standart;
 
         }
@@ -626,7 +447,7 @@ namespace VFileManager
             Console.SetCursorPosition(column, row);
             for (int i = 0; i < length; i++)
             {
-                if(i<= settings[Settings.AppWidth])
+                if(i<= settings.AppWidth)
                     Console.Write(" ");
             }
         }
@@ -643,16 +464,16 @@ namespace VFileManager
                 switch (area)
                 {
                     case Areas.DirList:
-                        row = settings[Settings.DirListAreaLine];
+                        row = settings.DirListAreaLine;
                         break;
                     case Areas.FileList:
-                        row = settings[Settings.FileListAreaLine];
+                        row = settings.FileListAreaLine;
                         break;
                     case Areas.Info:
-                        row = settings[Settings.InfoAreaLine];
+                        row = settings.InfoAreaLine;
                         break;
                     case Areas.CommanLine:
-                        row = settings[Settings.CommandAreaLine];
+                        row = settings.CommandAreaLine;
                         break;
                 }
                 Console.SetCursorPosition(1, row);
@@ -666,7 +487,7 @@ namespace VFileManager
             ClearArea(Areas.DirList);
             for (int i = 0; i < manual.GetLength(0); i++)
             {
-                Console.SetCursorPosition(1, settings[Settings.DirListAreaLine] + i);
+                Console.SetCursorPosition(1, settings.DirListAreaLine + i);
                 Console.ForegroundColor = (ConsoleColor)Colors.Command;
                 Console.Write(manual[i, 0]);
                 Console.ForegroundColor = (ConsoleColor)Colors.Argument;
@@ -687,22 +508,22 @@ namespace VFileManager
             //верхняя строка            
             PrintFrameLine("╔═╗");
             //область вывода списка каталогов
-            for (int r = settings[Settings.DirListAreaLine]; r < settings[Settings.FileListAreaLine] - 1; r++)
+            for (int r = settings.DirListAreaLine; r < settings.FileListAreaLine - 1; r++)
                 PrintFrameLine("║ ║");
             //разделитель областей
             PrintFrameLine("╠═╣");
             //область вывода списка файлов
-            for (int r = settings[Settings.FileListAreaLine]; r < settings[Settings.InfoAreaLine] - 1; r++)
+            for (int r = settings.FileListAreaLine; r < settings.InfoAreaLine - 1; r++)
                 PrintFrameLine("║ ║");
             //разделитель областей
             PrintFrameLine("╠═╣");
             //область вывода информации
-            for (int r = settings[Settings.InfoAreaLine]; r < settings[Settings.CommandAreaLine] - 1; r++)
+            for (int r = settings.InfoAreaLine; r < settings.CommandAreaLine - 1; r++)
                 PrintFrameLine("║ ║");
             //разделитель областей
             PrintFrameLine("╠═╣");
             //Область ввода комманд                        
-            for (int r = settings[Settings.CommandAreaLine]; r < settings[Settings.AppHeight] - 1; r++)
+            for (int r = settings.CommandAreaLine; r < settings.AppHeight - 1; r++)
                 PrintFrameLine("║ ║");
             //нижняя строка
             PrintFrameLine("╚═╝");
@@ -719,7 +540,7 @@ namespace VFileManager
             if(lineSymbols.Length == 3)
             {
                 Console.Write(lineSymbols[0]);
-                for (int c = 1; c < settings[Settings.AppWidth] - 1; c++)
+                for (int c = 1; c < settings.AppWidth - 1; c++)
                 {
                     Console.Write(lineSymbols[1]);
                 }
@@ -740,7 +561,7 @@ namespace VFileManager
             PrintMessage(Areas.Info, Messages.ListMessage);
 
 
-            int lines = settings[Settings.FileListAreaLine] - settings[Settings.DirListAreaLine] - 2;//Количество линий списка выводимых на экран за один раз
+            int lines = settings.FileListAreaLine - settings.DirListAreaLine - 2;//Количество линий списка выводимых на экран за один раз
             int pages = (dirList.Count - 1) / lines;//Количество страниц в списке
             if (pages * lines < (dirList.Count - 1)) pages++;
 
@@ -749,7 +570,7 @@ namespace VFileManager
             {
                 Console.BackgroundColor = (ConsoleColor)Colors.Command;
                 Console.ForegroundColor = (ConsoleColor)Colors.Background;
-                Console.SetCursorPosition(1, settings[Settings.DirListAreaLine]);//Вывод названия корневого каталога в первой строке
+                Console.SetCursorPosition(1, settings.DirListAreaLine);//Вывод названия корневого каталога в первой строке
                 Console.Write(string.Format(dirList[0]));
                 Console.BackgroundColor = (ConsoleColor)Colors.Background;
                 Console.ForegroundColor = (ConsoleColor)Colors.Standart;
@@ -763,21 +584,21 @@ namespace VFileManager
                     {
                         if (i < (dirList.Count - 1))
                         {
-                            Console.SetCursorPosition(1, i - number + settings[Settings.DirListAreaLine] + 1);
+                            Console.SetCursorPosition(1, i - number + settings.DirListAreaLine + 1);
                             Console.Write(string.Format(dirList[i + 1]));
                         }
                     }
 
                 //Информация о номере выводимой страницы
                 string pageInfo = $" page {number / lines + 1} from {pages} ";
-                Console.SetCursorPosition(settings[Settings.AppWidth] / 2 - pageInfo.Length / 2, settings[Settings.FileListAreaLine] - 1);
+                Console.SetCursorPosition(settings.AppWidth / 2 - pageInfo.Length / 2, settings.FileListAreaLine - 1);
                 Console.WriteLine(pageInfo);
 
                 //Обработка нажатий клавиатуры
                 if(pages > 1)//Если страниц больше одной, то включаем листалку
                 {
                     Console.CursorVisible = false;
-                    Console.SetCursorPosition(1, settings[Settings.CommandAreaLine]);
+                    Console.SetCursorPosition(1, settings.CommandAreaLine);
                     ConsoleKeyInfo key = Console.ReadKey();
                     switch (key.Key)
                     {
@@ -809,7 +630,7 @@ namespace VFileManager
             ClearArea(Areas.FileList);
             PrintMessage(Areas.Info, Messages.ListMessage);
 
-            int lines = settings[Settings.InfoAreaLine] - settings[Settings.FileListAreaLine] - 2;//Количество линий списка выводимых на экран за один раз
+            int lines = settings.InfoAreaLine - settings.FileListAreaLine - 2;//Количество линий списка выводимых на экран за один раз
             int pages = (fileList.Count - 1) / lines;//Количество страниц в списке
             if (pages * lines < (fileList.Count - 1)) pages++;
 
@@ -818,7 +639,7 @@ namespace VFileManager
             {
                 Console.BackgroundColor = (ConsoleColor)Colors.Command;
                 Console.ForegroundColor = (ConsoleColor)Colors.Background;
-                Console.SetCursorPosition(1, settings[Settings.FileListAreaLine]);//Вывод названия корневого каталога в первой строке
+                Console.SetCursorPosition(1, settings.FileListAreaLine);//Вывод названия корневого каталога в первой строке
                 Console.Write(string.Format(fileList[0]));
                 Console.BackgroundColor = (ConsoleColor)Colors.Background;
                 Console.ForegroundColor = (ConsoleColor)Colors.Standart;
@@ -832,21 +653,21 @@ namespace VFileManager
                     {
                         if (i < (fileList.Count - 1))
                         {
-                            Console.SetCursorPosition(1, i - number + settings[Settings.FileListAreaLine] + 1);
+                            Console.SetCursorPosition(1, i - number + settings.FileListAreaLine + 1);
                             Console.Write(string.Format(fileList[i + 1]));
                         }
                     }
 
                 //Информация о номере выводимой страницы
                 string pageInfo = $" page {number / lines + 1} from {pages} ";
-                Console.SetCursorPosition(settings[Settings.AppWidth] / 2 - pageInfo.Length / 2, settings[Settings.InfoAreaLine] - 1);
+                Console.SetCursorPosition(settings.AppWidth / 2 - pageInfo.Length / 2, settings.InfoAreaLine - 1);
                 Console.WriteLine(pageInfo);
 
                 //Обработка нажатий клавиатуры
                 if (pages > 1)//Если страниц больше одной, то включаем листалку
                 {
                     Console.CursorVisible = false;
-                    Console.SetCursorPosition(1, settings[Settings.CommandAreaLine]);
+                    Console.SetCursorPosition(1, settings.CommandAreaLine);
                     ConsoleKeyInfo key = Console.ReadKey();
                     switch (key.Key)
                     {
@@ -888,7 +709,7 @@ namespace VFileManager
         /// <param name="level">уровень глубины катлогов от изначального</param>
         public static void SeekDirectoryRecursion(string path, int maxLevel = 0, string graphLine = "", int level = 1)
         {
-            if (maxLevel == 0) maxLevel = settings[Settings.MaxLevelDefault];//Если максимальная глубина не задана, то ограничиваем дефолтным значением
+            if (maxLevel == 0) maxLevel = settings.MaxLevelDefault;//Если максимальная глубина не задана, то ограничиваем дефолтным значением
 
             //Превращаем путь вроде "d:" в "d:\", т.к. Directory.Exist() считает его валидным, а DirectoryInfo не совсем
             if (path[path.Length - 1] == ':') path = path + '\\';
