@@ -7,7 +7,6 @@ using System.Text.Json.Serialization;
 
 namespace VFileManager
 {
-
     class Program
     {
         #region ---- STRING CONSTANTS ----
@@ -53,51 +52,15 @@ namespace VFileManager
         };
 
 
-        /// <summary>Ключи словаря сообщений</summary>
-        enum Messages
-        {
-            AppName,
-            EnterCommand,
-            WrongCommand,
-            WrongPath,
-            CommandSymbol,
-            ListMessage,
-        }
-
-        /// <summary>Словарь сообщений</summary>
-        private static readonly Dictionary<Messages, string> messages = new Dictionary<Messages, string>
-        {
-            { Messages.AppName, " VFileManager " },
-            { Messages.EnterCommand, "Введите комманду. (help - для списка комманд)" },
-            { Messages.WrongCommand, "Неправильная команда. Повторите ввод." },
-            { Messages.WrongPath, "Неправильный путь. Повторите ввод." },
-            { Messages.CommandSymbol, ":>" },
-            { Messages.ListMessage, "pageUp/pageDown (or arrows) - change pages. Q/Esc - stop." },
-        };
-
-        /// <summary>Справка по коммандам
-        /// 0 элемент - команда
-        /// 1 элемент - параметр/параметры
-        /// 2 элемент - описание</summary>
-        private static readonly string[,] manual = new string[,]
-        {
-            { "", "", "Список комманд:" },
-            { "help ", "", "- вывод справки" },
-            { "dirs ", "[<path>] [-p <int>] [-l <int>] ", "- вывод списка каталогов" },
-            { "", "     path ", "- путь к выводимому каталогу" },
-            { "", "     -p <int> ", "- номер страницы, default=1" },
-            { "", "     -l <int> ", "- количество уровней каталогов, default=2" },
-            { "files ", "[<path>] [-p <int>]", "- вывод списка файлов" },
-            { "", "      path ", "- путь к каталогу из файлов, если не указан то будет использован корень из списка каталогов" },
-            { "", "      -p <int> ", "- номер страницы, default=1" },
-            { "exit ", "", "- выход из программы" },
-        };
 
         #endregion
 
         #region ---- FIELDS & PROPERTIES ----
 
+        /// <summary>Настройки приложения</summary>
         private static Settings settings = new Settings(settingsFile);
+        /// <summary>Вывод на экран</summary>
+        private static Output output = new Output(settings);
 
         /// <summary>Сюда будет помещаться список каталогов</summary>
         private static List<string> dirList = new List<string>();
@@ -106,94 +69,33 @@ namespace VFileManager
 
         #endregion
 
-
-        #region ---- NUMERIC CONSTANTS ----
-
-        /// <summary>Цвета для различных элементов интерфейса</summary>
-        enum Colors
-        {
-            Frame = (int)ConsoleColor.Green,
-            Standart = (int)ConsoleColor.Gray,
-            Command = (int)ConsoleColor.Yellow,
-            Argument = (int)ConsoleColor.DarkYellow,
-            Background = (int)ConsoleColor.Black,
-        }
-
-        /// <summary>Экранные области приложения</summary>
-        enum Areas
-        {
-            DirList,
-            FileList,
-            Info,
-            CommanLine,
-        }
-
-        #endregion
-
         static void Main(string[] args)
         {
             Init();//Инициализация
 
             Console.Clear();
-            PrintMainFrame();
-            PrintMessage(Areas.Info, Messages.EnterCommand);
+            output.PrintMainFrame();
+            output.PrintMessage(Areas.Info, Messages.EnterCommand);
 
             //Основной цикл
             bool isExit = false;
             while (!isExit)
             {
-                PrintMessage(Areas.Info, Messages.EnterCommand);
+                output.PrintMessage(Areas.Info, Messages.EnterCommand);
                 List<string> inputWords = CommandInput();
                 if(inputWords.Count != 0)
                     switch (checkCommand(inputWords[0]))
                     {
                         case Commands.Help://Вывод справки
-                            PrintManual();
+                            output.PrintManual();
                             break;
 
                         case Commands.Dirs://Вывод списка каталогов
-                            int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
-                            int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
-                            string path = FindPath(inputWords, 1);//Каталог который сканируем
-                            if (path == string.Empty) path = settings.LastPath;//Если каталог не задан, то используем последний каталог
-                            if(IsPathExist(path))
-                            {
-                                dirList.Clear();
-                                SeekDirectoryRecursion(path, maxLevel) ;
-                                PrintDirList(dirList, page);
-                                settings.LastPath = path;
-                                settings.SaveSettings();
-                            }
-                            else
-                            {
-                                PrintMessage(Areas.Info, Messages.WrongPath);
-                                Console.ReadKey();
-                            }
+                            DirList(inputWords);
                             break;
 
                         case Commands.Files://Вывод списка файлов
-                            page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
-                            path = FindPath(inputWords, 1);//Каталог который сканируем
-                            if (path == string.Empty)
-                            {
-                                if (dirList.Count != 0)
-                                    path = dirList[0];
-                                else
-                                    path = settings.LastPath;
-                            }
-
-                            if (IsPathExist(path))
-                            {
-                                fileList.Clear();
-                                SeekDirectoryForFiles(path);
-                                PrintFileList(fileList, page);
-                            }
-                            else
-                            {
-                                PrintMessage(Areas.Info, Messages.WrongPath);
-                                Console.ReadKey();
-                            }
-
+                            FileList(inputWords);
                             break;
 
                         case Commands.Exit://Выход
@@ -201,14 +103,11 @@ namespace VFileManager
                             break;
 
                         case Commands.WrongCommand://Неправильная команда
-                            PrintMessage(Areas.Info, Messages.WrongCommand);
+                            output.PrintMessage(Areas.Info, Messages.WrongCommand);
                             Console.ReadKey();
                             break;
-
                     }
-
             }
-            
         }
 
         #region ---- INIT ----
@@ -235,7 +134,7 @@ namespace VFileManager
         /// <returns>Список содержащий комманду пользователя и аргументы</returns>
         private static List<string> CommandInput()
         {
-            PrintMessage(Areas.CommanLine, Messages.CommandSymbol);
+            output.PrintMessage(Areas.CommanLine, Messages.CommandSymbol);
             string input = Console.ReadLine();
             List<string> inputWords = new List<string>();//Список для комманд и аргументов
             StringBuilder word = new StringBuilder();//Буфер для символов комманд
@@ -399,303 +298,6 @@ namespace VFileManager
 
         #endregion
 
-        #region ---- PRINT METHODS ----
-
-        /// <summary>Очищает заданную область интерфейса</summary>
-        /// <param name="area">Очищаемая область</param>
-        private static void ClearArea(Areas area)
-        {
-            int firstRow = 0;
-            int lastRow = 0;
-            switch(area)
-            {
-                case Areas.DirList:
-                    firstRow = settings.DirListAreaLine;
-                    lastRow = settings.FileListAreaLine - 1;
-                    break;
-                case Areas.FileList:
-                    firstRow = settings.FileListAreaLine;
-                    lastRow = settings.InfoAreaLine - 1;
-                    break;
-                case Areas.Info:
-                    firstRow = settings.InfoAreaLine;
-                    lastRow = settings.CommandAreaLine - 1;
-                    break;
-                case Areas.CommanLine:
-                    firstRow = settings.CommandAreaLine;
-                    lastRow = settings.AppHeight - 1;
-                    break;
-            }
-
-            for (int i = firstRow; i < lastRow; i++)
-                ClearLine(1, i, settings.AppWidth - 2);
-
-            //очистка информации о странице
-            Console.SetCursorPosition(0, lastRow);
-            Console.ForegroundColor = (ConsoleColor)Colors.Frame;
-            PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
-            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-
-        }
-
-        /// <summary>Очищает в консоли указанную строку</summary>
-        /// <param name="column">Номер столбца с которого нужно очистить строку</param>
-        /// <param name="row">Номер строки которую нужно очистить</param>
-        /// <param name="length">Длина строки которую нужно очистить</param>
-        private static void ClearLine(int column, int row, int length)
-        {
-            Console.SetCursorPosition(column, row);
-            for (int i = 0; i < length; i++)
-            {
-                if(i<= settings.AppWidth)
-                    Console.Write(" ");
-            }
-        }
-
-        /// <summary>Выводит сообщение с заданной области</summary>
-        /// <param name="area">ОБласть экрана в которой нужно вывести сообщение</param>
-        /// <param name="message">Ключ в словаре сообщений</param>
-        private static void PrintMessage(Areas area, Messages message)
-        {
-            if(messages.ContainsKey(message))
-            {
-                ClearArea(area);
-                int row = 1;
-                switch (area)
-                {
-                    case Areas.DirList:
-                        row = settings.DirListAreaLine;
-                        break;
-                    case Areas.FileList:
-                        row = settings.FileListAreaLine;
-                        break;
-                    case Areas.Info:
-                        row = settings.InfoAreaLine;
-                        break;
-                    case Areas.CommanLine:
-                        row = settings.CommandAreaLine;
-                        break;
-                }
-                Console.SetCursorPosition(1, row);
-                Console.Write(messages[message]);
-            }
-        }
-
-        /// <summary>Выводит на экран справку по коммандам</summary>
-        private static void PrintManual()
-        {
-            ClearArea(Areas.DirList);
-            for (int i = 0; i < manual.GetLength(0); i++)
-            {
-                Console.SetCursorPosition(1, settings.DirListAreaLine + i);
-                Console.ForegroundColor = (ConsoleColor)Colors.Command;
-                Console.Write(manual[i, 0]);
-                Console.ForegroundColor = (ConsoleColor)Colors.Argument;
-                Console.Write(manual[i, 1]);
-                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-                Console.Write(manual[i, 2]);
-            }
-        }
-
-
-        /// <summary>Выводит на экран рамку приложения</summary>
-        private static void PrintMainFrame()
-        {
-            //╔ ═ ╗ ╚ ║ ╝ ╠ ╣ ╦ ╩ ╬ █ - символы для рамки
-
-            Console.SetCursorPosition(0, 0);
-            Console.ForegroundColor = (ConsoleColor)Colors.Frame;
-            //верхняя строка            
-            PrintFrameLine("╔═╗");
-            //область вывода списка каталогов
-            for (int r = settings.DirListAreaLine; r < settings.FileListAreaLine - 1; r++)
-                PrintFrameLine("║ ║");
-            //разделитель областей
-            PrintFrameLine("╠═╣");
-            //область вывода списка файлов
-            for (int r = settings.FileListAreaLine; r < settings.InfoAreaLine - 1; r++)
-                PrintFrameLine("║ ║");
-            //разделитель областей
-            PrintFrameLine("╠═╣");
-            //область вывода информации
-            for (int r = settings.InfoAreaLine; r < settings.CommandAreaLine - 1; r++)
-                PrintFrameLine("║ ║");
-            //разделитель областей
-            PrintFrameLine("╠═╣");
-            //Область ввода комманд                        
-            for (int r = settings.CommandAreaLine; r < settings.AppHeight - 1; r++)
-                PrintFrameLine("║ ║");
-            //нижняя строка
-            PrintFrameLine("╚═╝");
-            //название приложения
-            Console.SetCursorPosition(2, 0);
-            Console.WriteLine(messages[Messages.AppName]);
-            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-        }
-
-        /// <summary>Выводит на экран одну строку рамки приложения</summary>
-        /// <param name="lineSymbols">Строка из трех символов которые составляют строку рамки приложения</param>
-        private static void PrintFrameLine(string lineSymbols)
-        {
-            if(lineSymbols.Length == 3)
-            {
-                Console.Write(lineSymbols[0]);
-                for (int c = 1; c < settings.AppWidth - 1; c++)
-                {
-                    Console.Write(lineSymbols[1]);
-                }
-                Console.Write(lineSymbols[2]);
-                Console.WriteLine();
-            }
-        }
-
-        /// <summary>
-        /// Выводит на экран список файлов
-        /// </summary>
-        /// <param name="dirList">Список файлов для вывода на экран</param>
-        /// <param name="lines">Количество поизций одновременно выводимых на экран</param>
-        /// <param name="page">Номер страницы которую необходимо вывести на экран</param>
-        private static void PrintDirList(List<string> dirList, int page = 1 )
-        {
-            ClearArea(Areas.DirList);
-            PrintMessage(Areas.Info, Messages.ListMessage);
-
-
-            int lines = settings.FileListAreaLine - settings.DirListAreaLine - 2;//Количество линий списка выводимых на экран за один раз
-            int pages = (dirList.Count - 1) / lines;//Количество страниц в списке
-            if (pages * lines < (dirList.Count - 1)) pages++;
-
-            bool isExit = false;
-            while(!isExit)
-            {
-                Console.BackgroundColor = (ConsoleColor)Colors.Command;
-                Console.ForegroundColor = (ConsoleColor)Colors.Background;
-                Console.SetCursorPosition(1, settings.DirListAreaLine);//Вывод названия корневого каталога в первой строке
-                Console.Write(string.Format(dirList[0]));
-                Console.BackgroundColor = (ConsoleColor)Colors.Background;
-                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-
-                if (page < 1) page = 1;
-                if (page > pages) page = pages;
-                int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
-
-                if(pages>0)
-                    for (int i = number; i < number + lines; i++)
-                    {
-                        if (i < (dirList.Count - 1))
-                        {
-                            Console.SetCursorPosition(1, i - number + settings.DirListAreaLine + 1);
-                            Console.Write(string.Format(dirList[i + 1]));
-                        }
-                    }
-
-                //Информация о номере выводимой страницы
-                string pageInfo = $" page {number / lines + 1} from {pages} ";
-                Console.SetCursorPosition(settings.AppWidth / 2 - pageInfo.Length / 2, settings.FileListAreaLine - 1);
-                Console.WriteLine(pageInfo);
-
-                //Обработка нажатий клавиатуры
-                if(pages > 1)//Если страниц больше одной, то включаем листалку
-                {
-                    Console.CursorVisible = false;
-                    Console.SetCursorPosition(1, settings.CommandAreaLine);
-                    ConsoleKeyInfo key = Console.ReadKey();
-                    switch (key.Key)
-                    {
-                        case ConsoleKey.UpArrow:
-                        case ConsoleKey.PageUp:
-                            page--;
-                            ClearArea(Areas.DirList);
-                            break;
-                        case ConsoleKey.DownArrow:
-                        case ConsoleKey.PageDown:
-                            ClearArea(Areas.DirList);
-                            page++;
-                            break;
-                        case ConsoleKey.Q:
-                        case ConsoleKey.Escape:
-                            isExit = true;
-                            break;
-                    }
-                }
-                else
-                    isExit = true;
-
-            }
-            Console.CursorVisible = true;
-        }
-
-        private static void PrintFileList(List<string> fileList, int page = 1)
-        {
-            ClearArea(Areas.FileList);
-            PrintMessage(Areas.Info, Messages.ListMessage);
-
-            int lines = settings.InfoAreaLine - settings.FileListAreaLine - 2;//Количество линий списка выводимых на экран за один раз
-            int pages = (fileList.Count - 1) / lines;//Количество страниц в списке
-            if (pages * lines < (fileList.Count - 1)) pages++;
-
-            bool isExit = false;
-            while (!isExit)
-            {
-                Console.BackgroundColor = (ConsoleColor)Colors.Command;
-                Console.ForegroundColor = (ConsoleColor)Colors.Background;
-                Console.SetCursorPosition(1, settings.FileListAreaLine);//Вывод названия корневого каталога в первой строке
-                Console.Write(string.Format(fileList[0]));
-                Console.BackgroundColor = (ConsoleColor)Colors.Background;
-                Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-
-                if (page < 1) page = 1;
-                if (page > pages) page = pages;
-                int number = (page - 1) * lines;//Номер элемента списка начиная с которого будет вывод
-
-                if (pages > 0)
-                    for (int i = number; i < number + lines; i++)
-                    {
-                        if (i < (fileList.Count - 1))
-                        {
-                            Console.SetCursorPosition(1, i - number + settings.FileListAreaLine + 1);
-                            Console.Write(string.Format(fileList[i + 1]));
-                        }
-                    }
-
-                //Информация о номере выводимой страницы
-                string pageInfo = $" page {number / lines + 1} from {pages} ";
-                Console.SetCursorPosition(settings.AppWidth / 2 - pageInfo.Length / 2, settings.InfoAreaLine - 1);
-                Console.WriteLine(pageInfo);
-
-                //Обработка нажатий клавиатуры
-                if (pages > 1)//Если страниц больше одной, то включаем листалку
-                {
-                    Console.CursorVisible = false;
-                    Console.SetCursorPosition(1, settings.CommandAreaLine);
-                    ConsoleKeyInfo key = Console.ReadKey();
-                    switch (key.Key)
-                    {
-                        case ConsoleKey.UpArrow:
-                        case ConsoleKey.PageUp:
-                            page--;
-                            ClearArea(Areas.FileList);
-                            break;
-                        case ConsoleKey.DownArrow:
-                        case ConsoleKey.PageDown:
-                            ClearArea(Areas.FileList);
-                            page++;
-                            break;
-                        case ConsoleKey.Q:
-                        case ConsoleKey.Escape:
-                            isExit = true;
-                            break;
-                    }
-                }
-                else
-                    isExit = true;
-            }
-            Console.CursorVisible = true;
-
-        }
-
-        #endregion
-
         #region ---- WORK WITH FILES ----
 
         /// <summary>
@@ -726,8 +328,8 @@ namespace VFileManager
                     {
 
                         //Записываем в список для вывода на экран очередной каталог
-                        if (dir == dirContent[dirContent.Length - 1]) { dirList.Add(graphLine + "└──" + dir + "\n"); }
-                        else { dirList.Add(graphLine + "├──" + dir + "\n"); }
+                        if (dir == dirContent[dirContent.Length - 1]) { dirList.Add(graphLine + "└──" + dir); }
+                        else { dirList.Add(graphLine + "├──" + dir); }
 
 
                         //Просмотр содержимого каталога если мы не глубже максимального уровня
@@ -787,6 +389,62 @@ namespace VFileManager
 
 
         #endregion
+
+        #region --- COMMANDS ----
+
+        /// <summary>Вывод дерева каталогов</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        private static void DirList(List<string> inputWords)
+        {
+            int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
+            int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
+            string path = FindPath(inputWords, 1);//Каталог который сканируем
+            if (path == string.Empty) path = settings.LastPath;//Если каталог не задан, то используем последний каталог
+            if (IsPathExist(path))
+            {
+                dirList.Clear();
+                SeekDirectoryRecursion(path, maxLevel);
+                output.PrintList(Areas.DirList, dirList, page);
+                settings.LastPath = path;
+                settings.SaveSettings();
+            }
+            else
+            {
+                output.PrintMessage(Areas.Info, Messages.WrongPath);
+                Console.ReadKey();
+            }
+        }
+
+        /// <summary>Вывод списка файлов</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        private static void FileList(List<string> inputWords)
+        {
+            int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
+            string path = FindPath(inputWords, 1);//Каталог который сканируем
+            if (path == string.Empty)
+            {
+                if (dirList.Count != 0)
+                    path = dirList[0];
+                else
+                    path = settings.LastPath;
+            }
+
+            if (IsPathExist(path))
+            {
+                fileList.Clear();
+                SeekDirectoryForFiles(path);
+                output.PrintList(Areas.FileList, fileList, page); ;
+            }
+            else
+            {
+                output.PrintMessage(Areas.Info, Messages.WrongPath);
+                Console.ReadKey();
+            }
+        }
+
+        #endregion
+
+
     }
 
 
