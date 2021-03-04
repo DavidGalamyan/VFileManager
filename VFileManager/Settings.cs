@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-
 namespace VFileManager
 {
     class Settings
@@ -326,8 +325,5 @@ namespace VFileManager
         }
 
         #endregion
-
-
-
     }
 }

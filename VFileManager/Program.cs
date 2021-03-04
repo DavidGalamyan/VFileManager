@@ -327,10 +327,20 @@ namespace VFileManager
                     if (dir.Attributes == FileAttributes.Directory) //Если текущий элемент каталог
                     {
 
-                        //Записываем в список для вывода на экран очередной каталог
-                        if (dir == dirContent[dirContent.Length - 1]) { dirList.Add(graphLine + "└──" + dir); }
-                        else { dirList.Add(graphLine + "├──" + dir); }
+                        //Формируем представление в списке очередного каталога
+                        StringBuilder name = new StringBuilder();
+                        name.Append((char)Output.ColorSymbols.Argument);//Цвет структуры дерева каталогов
+                        //Префикс
+                        name.Append(graphLine);
+                        if (dir == dirContent[dirContent.Length - 1])
+                            name.Append("└──");//Если последний элемент в каталоге
+                        else
+                            name.Append("├──");//Если нет
+                        name.Append((char)Output.ColorSymbols.Standart);//Цвет имени каталога
+                        name.Append(dir);//Само имя каталога
 
+                        //Заносим получившееся в список
+                        dirList.Add(name.ToString()); 
 
                         //Просмотр содержимого каталога если мы не глубже максимального уровня
                         if (level < maxLevel)
@@ -443,10 +453,5 @@ namespace VFileManager
         }
 
         #endregion
-
-
     }
-
-
-
 }

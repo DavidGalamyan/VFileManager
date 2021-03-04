@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    #region ------ PUBLIC ENUMS ------
+
     /// <summary>Ключи словаря сообщений</summary>
-    enum Messages
+    public enum Messages
     {
         AppName,
         EnterCommand,
@@ -17,12 +19,14 @@ namespace VFileManager
         ListMessage,
     }
 
+    #endregion
+
     class MessagesBase
     {
-        #region ---- STRING CONSTANTS ----
+        #region ---- TEXTS ----
 
         /// <summary>Словарь сообщений</summary>
-        private readonly Dictionary<Messages, string> messages = new Dictionary<Messages, string>
+        private Dictionary<Messages, string> messages = new Dictionary<Messages, string>
         {
             { Messages.AppName, " VFileManager " },
             { Messages.EnterCommand, "Введите комманду. (help - для списка комманд)" },
@@ -33,21 +37,22 @@ namespace VFileManager
         };
 
         /// <summary>Справка по коммандам
-        /// 0 элемент - команда
-        /// 1 элемент - параметр/параметры
-        /// 2 элемент - описание</summary>
-        private readonly string[,] manual = new string[,]
+        /// Подсвечивающие строку символы:
+        /// '?' - цвет комманды
+        /// '|' - цвет аргумента
+        /// '*' - стандартный цвет текста</summary>
+        private List<string> manual = new List<string>
         {
-            { "", "", "Список комманд:" },
-            { "help ", "", "- вывод справки" },
-            { "dirs ", "[<path>] [-p <int>] [-l <int>] ", "- вывод списка каталогов" },
-            { "", "     path ", "- путь к выводимому каталогу" },
-            { "", "     -p <int> ", "- номер страницы, default=1" },
-            { "", "     -l <int> ", "- количество уровней каталогов, default=2" },
-            { "files ", "[<path>] [-p <int>]", "- вывод списка файлов" },
-            { "", "      path ", "- путь к каталогу из файлов, если не указан то будет использован корень из списка каталогов" },
-            { "", "      -p <int> ", "- номер страницы, default=1" },
-            { "exit ", "", "- выход из программы" },
+            { "Список комманд:" },
+            { "?help  |*- вывод справки" },
+            { "?dirs  |[<path>] [-p <int>] [-l <int>] *- вывод списка каталогов" },
+            { "?      |path *- путь к выводимому каталогу" },
+            { "?      |-p <int> *- номер страницы, default=1" },
+            { "?      |-l <int> *- количество уровней каталогов, default=2" },
+            { "?files |[<path>] [-p <int>] *- вывод списка файлов" },
+            { "?      |path *- путь к каталогу из файлов, если не указан то будет использован корень из списка каталогов" },
+            { "?      |-p <int> *- номер страницы, default=1" },
+            { "?exit  |*- выход из программы" },
         };
 
         #endregion
@@ -71,6 +76,13 @@ namespace VFileManager
         public bool ContainsKey(Messages key)
         {
             return messages.ContainsKey(key) ? true : false;
+        }
+
+        /// <summary>Возвращает Список содержащий справку</summary>
+        /// <returns>Список содержащий справку по командам</returns>
+        public List<string> GetManual()
+        {
+            return manual;
         }
 
         #endregion

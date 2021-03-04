@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    #region ------ PUBLIC ENUMS ------
+
     /// <summary>Экранные области приложения</summary>
     public enum Areas
     {
@@ -15,10 +17,11 @@ namespace VFileManager
         CommanLine,
     }
 
+    #endregion
+
     class Output
     {
-
-        #region ---- NUMERIC CONSTANTS ----
+        #region ---- CONSTANTS ----
 
         /// <summary>Цвета для различных элементов интерфейса</summary>
         enum Colors
@@ -29,6 +32,20 @@ namespace VFileManager
             Argument = (int)ConsoleColor.DarkYellow,
             Background = (int)ConsoleColor.Black,
         }
+
+        public enum ColorSymbols
+        {
+            Standart = (int)'*',
+            Command = (int)'?',
+            Argument = (int)'|',
+        }
+
+        Dictionary<char, Colors> colorCodes = new Dictionary<char, Colors>()
+        {
+            {(char)ColorSymbols.Standart, Colors.Standart},
+            {(char)ColorSymbols.Command, Colors.Command},
+            {(char)ColorSymbols.Argument, Colors.Argument},
+        };
 
         #endregion
 
@@ -132,18 +149,22 @@ namespace VFileManager
         /// <summary>Выводит на экран справку по коммандам</summary>
         public void PrintManual()
         {
-            ClearArea(Areas.DirList);
-            PrintMessage(Areas.DirList, Messages.AppName);
-            //for (int i = 0; i < manual.GetLength(0); i++)
-            //{
-            //    Console.SetCursorPosition(1, settings.DirListAreaLine + i);
-            //    Console.ForegroundColor = (ConsoleColor)Colors.Command;
-            //    Console.Write(manual[i, 0]);
-            //    Console.ForegroundColor = (ConsoleColor)Colors.Argument;
-            //    Console.Write(manual[i, 1]);
-            //    Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-            //    Console.Write(manual[i, 2]);
-            //}
+            PrintList(Areas.DirList, messages.GetManual());
+        }
+
+        /// <summary>Выводит на экран строку символов, раскрашивая ее с помощью спец-символоов</summary>
+        /// <param name="line">Строка для вывода на экран</param>
+        private void PrintColorLine(string line)
+        {
+            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+            foreach(char chr in line)
+            {
+                if (colorCodes.ContainsKey(chr))
+                    Console.ForegroundColor = (ConsoleColor)colorCodes[chr];
+                else
+                    Console.Write(chr);
+            }
+            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
         }
 
         /// <summary>Выводит на экран рамку приложения</summary>
@@ -227,7 +248,8 @@ namespace VFileManager
                         if (i < (list.Count - 1))
                         {
                             Console.SetCursorPosition(1, i - number + firstRow + 1);
-                            Console.Write(list[i + 1].PadRight(settings.AppWidth - 2));
+                            //Console.Write(list[i + 1].PadRight(settings.AppWidth - 2));
+                            PrintColorLine(list[i + 1].PadRight(settings.AppWidth - 2));
                         }
                         else//Если индек за пределами списка, то просто очищаем следующие строки
                         {
@@ -239,6 +261,7 @@ namespace VFileManager
                 string pageInfo = $" page {number / lines + 1} from {pages} ";
                 Console.SetCursorPosition(settings.AppWidth / 2 - pageInfo.Length / 2, lastRow);
                 Console.WriteLine(pageInfo);
+
 
                 //Обработка нажатий клавиатуры
                 if (pages > 1)//Если страниц больше одной, то включаем листалку
@@ -273,7 +296,5 @@ namespace VFileManager
 
 
         #endregion
-
-
     }
 }
