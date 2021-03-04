@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FilesHandler.cs" />
     <Compile Include="MessagesBase.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="Program.cs" />
