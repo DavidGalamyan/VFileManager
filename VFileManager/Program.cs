@@ -42,6 +42,7 @@ namespace VFileManager
         {
             Page,//номер страницы
             Level,//количество уровней (для вывода дерева каталогов)
+            Back,//номер страницы
         }
 
         /// <summary>Словарь тектовых ключей комманд</summary>
@@ -49,6 +50,7 @@ namespace VFileManager
         {
             { "-p", Arguments.Page },
             { "-l", Arguments.Level },
+            { "..", Arguments.Back },
         };
 
 
@@ -288,25 +290,6 @@ namespace VFileManager
         }
 
         /// <summary>
-        /// Проверяется является ли путь к файлу/каталогу полным или кратким (относительным)
-        /// </summary>
-        /// <param name="path">Проверяемый путь</param>
-        /// <returns>true, если путь полный (содержит двоеточие)</returns>
-        private static bool IsPathLong(string path)
-        {
-            bool isPathFull = false;
-            if(path != null)
-            {
-                foreach (char symbol in path)
-                {
-                    if (symbol == ':') isPathFull = true;
-                }
-            }
-
-            return isPathFull;
-        }
-
-        /// <summary>
         /// Собирает из относительного и полного пути (корневого каталога) один полный
         /// </summary>
         /// <param name="rootPath">Путь к корневому каталогу</param>
@@ -314,17 +297,12 @@ namespace VFileManager
         /// <returns>Полный путь к файлу/каталогу</returns>
         private static string MakeFullPath(string rootPath, string path)
         {
-            StringBuilder newString = new StringBuilder();
-            if(!IsPathLong(path))
-            {
-                newString.Append(rootPath);
-                char lastChar = rootPath[rootPath.Length - 1];
-                if (lastChar != '/' && lastChar != '\\')
-                    newString.Append("\\");
-            }
-            newString.Append(path);
-
-            return newString.ToString();
+            if (path == null)
+                return rootPath;
+            else if (path == "..")
+                return (Path.GetDirectoryName(rootPath));
+            else
+                return (Path.Combine(rootPath, path));
         }
 
         #endregion
