@@ -32,7 +32,7 @@ namespace VFileManager
         private static readonly Dictionary<string, Commands> commands = new Dictionary<string, Commands>
         {
             { "help", Commands.Help },
-            { "dirs", Commands.Dirs },
+            { "dir", Commands.Dirs },
             { "files", Commands.Files },
             { "exit", Commands.Exit },
         };
@@ -222,38 +222,28 @@ namespace VFileManager
         /// <summary>
         /// Ищет путь к файлу или каталогу в списке слов
         /// </summary>
-        /// <param name="inputWords">Список слов</param>
-        /// <param name="number">Порядковый номер пути который нужно вернуть</param>
+        /// <param name="words">Список слов</param>
+        /// <param name="number">Порядковый номер слова в списке которое надо проанализировать на наличие пути</param>
         /// <returns>Строку с найденым путем или пустую строку если путь не найден</returns>
-        private static string FindPath(List<string> inputWords, int number)
+        private static string FindPath(List<string> words, int number)
         {
-            string path = string.Empty;//Здесь будет найденный путь
-            int index = 1;//Индекс проверяемого слова
-            int currentNumber = 0;//Текущий номер пути в списке аргументов
-            bool isFound = false;
-            while (!isFound && index < inputWords.Count)
+            string path = null;//Здесь будет найденный путь
+
+            if(number < words.Count) //Есть ли в списке слово под нужным индексом
             {
-                if (!int.TryParse(inputWords[index], out _))//Если очередной аргумент не число...
+                if(IsPathValid(words[number]))//Проверяем на отсутвие запрещенных символов
                 {
-                    if(IsPathValid(inputWords[index]))//Если путь валидный...
-                    {
-                        currentNumber++;
-                        if (currentNumber == number)//Если это нужный нам путь по порядку, то заканчиваем поиск
-                        {
-                            path = inputWords[index];
-                            isFound = true;//Завершаем поиск
-                        }
-                    }
+                    path = words[number];
                 }
-                index++;
             }
+
             return path;
         }
 
         /// <summary>
         /// Проверяет на правильность заданный путь к файлу
         /// </summary>
-        /// <param name="dirName">Путь к файлу</param>
+        /// <param name="path">Путь к файлу</param>
         /// <returns>true, если путь правильный</returns>
         private static bool IsPathValid(string path)
         {
@@ -297,6 +287,45 @@ namespace VFileManager
             return isExist;
         }
 
+        /// <summary>
+        /// Проверяется является ли путь к файлу/каталогу полным или кратким (относительным)
+        /// </summary>
+        /// <param name="path">Проверяемый путь</param>
+        /// <returns>true, если путь полный (содержит двоеточие)</returns>
+        private static bool IsPathLong(string path)
+        {
+            bool isPathFull = false;
+            if(path != null)
+            {
+                foreach (char symbol in path)
+                {
+                    if (symbol == ':') isPathFull = true;
+                }
+            }
+
+            return isPathFull;
+        }
+
+        /// <summary>
+        /// Собирает из относительного и полного пути (корневого каталога) один полный
+        /// </summary>
+        /// <param name="rootPath">Путь к корневому каталогу</param>
+        /// <param name="path">Относительный путь к каталогу/файлу</param>
+        /// <returns>Полный путь к файлу/каталогу</returns>
+        private static string MakeFullPath(string rootPath, string path)
+        {
+            StringBuilder newString = new StringBuilder();
+            if(!IsPathLong(path))
+            {
+                newString.Append(rootPath);
+                char lastChar = rootPath[rootPath.Length - 1];
+                if (lastChar != '/' && lastChar != '\\')
+                    newString.Append("\\");
+            }
+            newString.Append(path);
+
+            return newString.ToString();
+        }
 
         #endregion
 
@@ -309,13 +338,19 @@ namespace VFileManager
             int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
             int maxLevel = findArguments(inputWords, Arguments.Level);//Глубина сканирования каталогов
             string path = FindPath(inputWords, 1);//Каталог который сканируем
-            if (path == string.Empty) path = settings.LastPath;//Если каталог не задан, то используем последний каталог
-            if (IsPathExist(path))
+            string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            if(!IsPathExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            {
+                fullPath = settings.LastPath;//То устанавливаем предыдущий путь
+            }
+
+            if (IsPathExist(fullPath))//Если путь существует, то сканируем его и выводим на экран
             {
                 dirList.Clear();
-                filesHandler.SeekDirectoryRecursion(path, dirList, maxLevel);
+                filesHandler.SeekDirectoryRecursion(fullPath, dirList, maxLevel);
                 output.PrintList(Areas.DirList, dirList, page);
-                settings.LastPath = path;
+                settings.LastPath = fullPath;
                 settings.SaveSettings();
             }
             else
@@ -331,18 +366,17 @@ namespace VFileManager
         {
             int page = findArguments(inputWords, Arguments.Page);//Номер страницы с которой начинается вывод
             string path = FindPath(inputWords, 1);//Каталог который сканируем
-            if (path == string.Empty)
+            string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            if (!IsPathExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
             {
-                if (dirList.Count != 0)
-                    path = dirList[0];
-                else
-                    path = settings.LastPath;
+                fullPath = settings.LastPath;//То устанавливаем предыдущий путь
             }
 
-            if (IsPathExist(path))
+            if (IsPathExist(fullPath))
             {
                 fileList.Clear();
-                filesHandler.SeekDirectoryForFiles(path, fileList);
+                filesHandler.SeekDirectoryForFiles(fullPath, fileList);
                 output.PrintList(Areas.FileList, fileList, page); ;
             }
             else
