@@ -30,9 +30,11 @@ namespace VFileManager
         private const int DIRLIST_AREA_LINE = 1;
         /// <summary>Номер строки в которой происходит вывод списка файлов</summary>
         private const int FILELIST_AREA_LINE = 20;
-        /// <summary>Номер строки в которой происходит вывод информации для пользователя</summary>
-        private const int INFO_AREA_LINE = 34;
-        /// <summary>Номер строки в которой происходит ввод координат</summary>
+        /// <summary>Номер строки в которой происходит вывод информации о файле/каталоге</summary>
+        private const int INFO_AREA_LINE = 33;
+        /// <summary>Номер строки в которой выводятся указания для пользователя</summary>
+        private const int COMMAND_INFO_AREA_LINE = 36;
+        /// <summary>Номер строки в которой происходит ввод комманд</summary>
         private const int COMMAND_AREA_LINE = 38;
 
         #endregion
@@ -51,6 +53,7 @@ namespace VFileManager
             DirListAreaLine,
             FileListAreaLine,
             InfoAreaLine,
+            CommandInfoAreaLine,
             CommandAreaLine,
             LastPath,
         }
@@ -70,6 +73,7 @@ namespace VFileManager
             { SettingsKeys.DirListAreaLine, DIRLIST_AREA_LINE},
             { SettingsKeys.FileListAreaLine, FILELIST_AREA_LINE},
             { SettingsKeys.InfoAreaLine, INFO_AREA_LINE},
+            { SettingsKeys.CommandInfoAreaLine, COMMAND_INFO_AREA_LINE},
             { SettingsKeys.CommandAreaLine, COMMAND_AREA_LINE},
         };
 
@@ -168,7 +172,7 @@ namespace VFileManager
             }
         }
 
-        /// <summary>Номер строки в которой происходит ввод координат</summary>
+        /// <summary>Номер строки в которой происходит ввод комманд</summary>
         public int CommandAreaLine
         {
             get
@@ -178,6 +182,19 @@ namespace VFileManager
             set
             {
                 numericSettings[SettingsKeys.CommandAreaLine] = value;
+            }
+        }
+
+        /// <summary>Номер строки в которой выводятся указания для пользователя</summary>
+        public int CommandInfoAreaLine
+        {
+            get
+            {
+                return numericSettings[SettingsKeys.CommandInfoAreaLine];
+            }
+            set
+            {
+                numericSettings[SettingsKeys.CommandInfoAreaLine] = value;
             }
         }
 

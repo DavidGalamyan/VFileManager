@@ -24,6 +24,58 @@ namespace VFileManager
 
         #endregion
 
+        #region ---- CHECKS ----
+
+        /// <summary>
+        /// Проверяет на правильность заданный путь к файлу
+        /// </summary>
+        /// <param name="path">Путь к файлу</param>
+        /// <returns>true, если путь правильный</returns>
+        public bool IsPathValid(string path)
+        {
+            return (path != null) && (path.IndexOfAny(Path.GetInvalidPathChars()) == -1);
+        }
+
+        /// <summary>
+        /// Проверяет существует ли указанный файл
+        /// </summary>
+        /// <param name="fileName">Имя файла</param>
+        /// <returns>true, если файл существует</returns>
+        public bool IsFileExist(string fileName)
+        {
+            bool isExist = false;
+            //Если имя файла не пустое и не содержит недопустимых символов
+            if (IsPathValid(fileName))
+                try
+                {
+                    FileInfo tempFileInfo = new FileInfo(fileName);
+                    isExist = tempFileInfo.Exists;
+                }
+                catch
+                {
+                    isExist = false;
+                }
+            return isExist;
+        }
+
+
+        /// <summary>
+        /// Проверяет существует ли указанный каталог
+        /// </summary>
+        /// <param name="dirName">Имя каталога</param>
+        /// <returns>true, если каталог существует</returns>
+        public bool IsDirExist(string dirName)
+        {
+            bool isExist = false;
+            //Если имя файла не пустое и не содержит недопустимых символов
+            if (IsPathValid(dirName))
+                if (Directory.Exists(dirName))
+                    isExist = true;
+            return isExist;
+        }
+
+        #endregion
+
         #region ---- WORK WITH FILES ----
 
         /// <summary>
@@ -124,6 +176,23 @@ namespace VFileManager
             catch
             {
                 //!TODO если каталог недоступен, то ничего не делаем (пока)
+            }
+
+        }
+
+
+        public void GetInfo(string path, List<string> fileInfo)
+        {
+            fileInfo.Add("Информация о файле");
+            if (IsFileExist(path))
+            {
+                FileInfo info = new FileInfo(path);
+                fileInfo.Add(info.FullName);
+            }
+            else if (IsDirExist(path))
+            {
+                DirectoryInfo info = new DirectoryInfo(path);
+                fileInfo.Add(info.FullName);
             }
 
         }

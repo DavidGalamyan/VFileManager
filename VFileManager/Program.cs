@@ -22,8 +22,9 @@ namespace VFileManager
         enum Commands
         {
             Help,//Вывод справки
-            Dirs,//Вывод списка каталогов
+            Dir,//Вывод списка каталогов
             Files,//Вывод списка каталогов
+            Info,//Вывод информации о файле
             Exit,//Выход из программы
             WrongCommand,//Неправильная комманда
         }
@@ -32,8 +33,9 @@ namespace VFileManager
         private static readonly Dictionary<string, Commands> commands = new Dictionary<string, Commands>
         {
             { "help", Commands.Help },
-            { "dir", Commands.Dirs },
+            { "dir", Commands.Dir },
             { "files", Commands.Files },
+            { "info", Commands.Info },
             { "exit", Commands.Exit },
         };
 
@@ -70,6 +72,8 @@ namespace VFileManager
         private static List<string> dirList = new List<string>();
         /// <summary>Сюда будет помещаться список файлов</summary>
         private static List<string> fileList = new List<string>();
+        /// <summary>Сюда будет помещаться информация о файле/каталоге</summary>
+        private static List<string> fileInfo = new List<string>();
 
         #endregion
 
@@ -79,13 +83,12 @@ namespace VFileManager
 
             Console.Clear();
             output.PrintMainFrame();
-            output.PrintMessage(Areas.Info, Messages.EnterCommand);
 
             //Основной цикл
             bool isExit = false;
             while (!isExit)
             {
-                output.PrintMessage(Areas.Info, Messages.EnterCommand);
+                output.PrintMessage(Areas.CommandInfoLine, Messages.EnterCommand);
                 List<string> inputWords = CommandInput();
                 if(inputWords.Count != 0)
                     switch (checkCommand(inputWords[0]))
@@ -94,7 +97,7 @@ namespace VFileManager
                             output.PrintManual();
                             break;
 
-                        case Commands.Dirs://Вывод списка каталогов
+                        case Commands.Dir://Вывод списка каталогов
                             DirList(inputWords);
                             break;
 
@@ -102,12 +105,16 @@ namespace VFileManager
                             FileList(inputWords);
                             break;
 
+                        case Commands.Info://Вывод списка файлов
+                            Info(inputWords);
+                            break;
+
                         case Commands.Exit://Выход
                             isExit = true;
                             break;
 
                         case Commands.WrongCommand://Неправильная команда
-                            output.PrintMessage(Areas.Info, Messages.WrongCommand);
+                            output.PrintMessage(Areas.CommandInfoLine, Messages.WrongCommand);
                             Console.ReadKey();
                             break;
                     }
@@ -138,7 +145,7 @@ namespace VFileManager
         /// <returns>Список содержащий комманду пользователя и аргументы</returns>
         private static List<string> CommandInput()
         {
-            output.PrintMessage(Areas.CommanLine, Messages.CommandSymbol);
+            output.PrintMessage(Areas.CommandLine, Messages.CommandSymbol);
             string input = Console.ReadLine();
             List<string> inputWords = new List<string>();//Список для комманд и аргументов
             StringBuilder word = new StringBuilder();//Буфер для символов комманд
@@ -233,60 +240,13 @@ namespace VFileManager
 
             if(number < words.Count) //Есть ли в списке слово под нужным индексом
             {
-                if(IsPathValid(words[number]))//Проверяем на отсутвие запрещенных символов
+                if(filesHandler.IsPathValid(words[number]))//Проверяем на отсутвие запрещенных символов
                 {
                     path = words[number];
                 }
             }
 
             return path;
-        }
-
-        /// <summary>
-        /// Проверяет на правильность заданный путь к файлу
-        /// </summary>
-        /// <param name="path">Путь к файлу</param>
-        /// <returns>true, если путь правильный</returns>
-        private static bool IsPathValid(string path)
-        {
-            return (path != null) && (path.IndexOfAny(Path.GetInvalidPathChars()) == -1);
-        }
-
-        /// <summary>
-        /// Проверяет существует ли указанный файл
-        /// </summary>
-        /// <param name="fileName">Имя файла</param>
-        /// <returns>true, если файл существует</returns>
-        private static bool IsFileExist(string fileName)
-        {
-            bool isExist = false;
-            //Если имя файла не пустое и не содержит недопустимых символов
-            if (IsPathValid(fileName))
-                try
-                {
-                    FileInfo tempFileInfo = new FileInfo(fileName);
-                    isExist = true;
-                }
-                catch (NotSupportedException)
-                {
-                    isExist = false;
-                }
-            return isExist;
-        }
-
-        /// <summary>
-        /// Проверяет существует ли указанный каталог
-        /// </summary>
-        /// <param name="dirName">Имя каталога</param>
-        /// <returns>true, если каталог существует</returns>
-        private static bool IsPathExist(string dirName)
-        {
-            bool isExist = false;
-            //Если имя файла не пустое и не содержит недопустимых символов
-            if (IsPathValid(dirName))
-                if (Directory.Exists(dirName))
-                    isExist = true;
-            return isExist;
         }
 
         /// <summary>
@@ -318,12 +278,12 @@ namespace VFileManager
             string path = FindPath(inputWords, 1);//Каталог который сканируем
             string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            if(!IsPathExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            if(!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
             {
                 fullPath = settings.LastPath;//То устанавливаем предыдущий путь
             }
 
-            if (IsPathExist(fullPath))//Если путь существует, то сканируем его и выводим на экран
+            if (filesHandler.IsDirExist(fullPath))//Если путь существует, то сканируем его и выводим на экран
             {
                 dirList.Clear();
                 filesHandler.SeekDirectoryRecursion(fullPath, dirList, maxLevel);
@@ -333,7 +293,7 @@ namespace VFileManager
             }
             else
             {
-                output.PrintMessage(Areas.Info, Messages.WrongPath);
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
                 Console.ReadKey();
             }
         }
@@ -346,12 +306,12 @@ namespace VFileManager
             string path = FindPath(inputWords, 1);//Каталог который сканируем
             string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            if (!IsPathExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
             {
                 fullPath = settings.LastPath;//То устанавливаем предыдущий путь
             }
 
-            if (IsPathExist(fullPath))
+            if (filesHandler.IsDirExist(fullPath))
             {
                 fileList.Clear();
                 filesHandler.SeekDirectoryForFiles(fullPath, fileList);
@@ -359,10 +319,28 @@ namespace VFileManager
             }
             else
             {
-                output.PrintMessage(Areas.Info, Messages.WrongPath);
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
                 Console.ReadKey();
             }
         }
+
+        private static void Info(List<string> inputWords)
+        {
+            string path = FindPath(inputWords, 1);//Каталог который сканируем
+            string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            //{
+            //    output.PrintMessage(Areas.Info, Messages.WrongPath);
+            //    Console.ReadKey();
+            //}
+
+            fileInfo.Clear();
+            filesHandler.GetInfo(fullPath, fileInfo);
+            output.PrintList(Areas.Info, fileInfo); ;
+
+        }
+
+
 
         #endregion
     }

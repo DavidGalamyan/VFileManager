@@ -14,7 +14,8 @@ namespace VFileManager
         DirList,
         FileList,
         Info,
-        CommanLine,
+        CommandLine,
+        CommandInfoLine,
     }
 
     #endregion
@@ -88,9 +89,13 @@ namespace VFileManager
                     break;
                 case Areas.Info:
                     firstRow = settings.InfoAreaLine;
+                    lastRow = settings.CommandInfoAreaLine - 1;
+                    break;
+                case Areas.CommandInfoLine:
+                    firstRow = settings.CommandInfoAreaLine;
                     lastRow = settings.CommandAreaLine - 1;
                     break;
-                case Areas.CommanLine:
+                case Areas.CommandLine:
                     firstRow = settings.CommandAreaLine;
                     lastRow = settings.AppHeight - 1;
                     break;
@@ -112,7 +117,19 @@ namespace VFileManager
             //очистка информации о странице
             Console.SetCursorPosition(0, lastRow);
             Console.ForegroundColor = (ConsoleColor)Colors.Frame;
-            PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
+            switch(area)
+            {
+                case Areas.DirList:
+                case Areas.FileList:
+                case Areas.Info:
+                case Areas.CommandInfoLine:
+                    PrintFrameLine("╠═╣");
+                    break;
+                case Areas.CommandLine:
+                    PrintFrameLine("╚═╝");
+                    break;
+            }
+            //PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
             Console.ForegroundColor = (ConsoleColor)Colors.Standart;
 
         }
@@ -187,7 +204,12 @@ namespace VFileManager
             //разделитель областей
             PrintFrameLine("╠═╣");
             //область вывода информации
-            for (int r = settings.InfoAreaLine; r < settings.CommandAreaLine - 1; r++)
+            for (int r = settings.InfoAreaLine; r < settings.CommandInfoAreaLine - 1; r++)
+                PrintFrameLine("║ ║");
+            //разделитель областей
+            PrintFrameLine("╠═╣");
+            //Область иформации о комманде
+            for (int r = settings.CommandInfoAreaLine; r < settings.CommandAreaLine - 1; r++)
                 PrintFrameLine("║ ║");
             //разделитель областей
             PrintFrameLine("╠═╣");
@@ -221,7 +243,7 @@ namespace VFileManager
         public void PrintList(Areas area, List<string> list, int page = 1)
         {
             ClearArea(area);
-            PrintMessage(Areas.Info, Messages.ListMessage);
+            PrintMessage(Areas.CommandInfoLine, Messages.ListMessage);
 
             (int firstRow, int lastRow) = GetAreaRows(area);
             int lines = lastRow - firstRow - 1;//Количество линий списка выводимых на экран за один раз
