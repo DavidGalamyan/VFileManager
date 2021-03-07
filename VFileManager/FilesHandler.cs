@@ -12,14 +12,16 @@ namespace VFileManager
         #region ---- FIELDS ----
 
         Settings settings;
+        MessagesBase messages;
 
         #endregion
 
         #region ---- CONSTRUCTORS ----
 
-        public FilesHandler(Settings settings)
+        public FilesHandler(Settings settings, MessagesBase messages)
         {
             this.settings = settings;
+            this.messages = messages;
         }
 
         #endregion
@@ -181,18 +183,27 @@ namespace VFileManager
         }
 
 
+        /// <summary>
+        /// Заносит информацию о файле/каталоге в список для вывода на экран
+        /// </summary>
+        /// <param name="path">Полный путь к файлу/каталогу</param>
+        /// <param name="fileInfo">Список в который нужно поместить информацию о файле</param>
         public void GetInfo(string path, List<string> fileInfo)
         {
-            fileInfo.Add("Информация о файле");
             if (IsFileExist(path))
             {
+                fileInfo.Add(messages[Messages.FileInfo] + path);
                 FileInfo info = new FileInfo(path);
-                fileInfo.Add(info.FullName);
+                fileInfo.Add(messages[Messages.CreationDate] + info.CreationTime);
+                fileInfo.Add(messages[Messages.Attributes] + info.Attributes);
+                fileInfo.Add(messages[Messages.Size] + info.Length + messages[Messages.Bytes]);
             }
             else if (IsDirExist(path))
             {
+                fileInfo.Add(messages[Messages.DirInfo] + path);
                 DirectoryInfo info = new DirectoryInfo(path);
-                fileInfo.Add(info.FullName);
+                fileInfo.Add(messages[Messages.CreationDate] + info.CreationTime);
+                fileInfo.Add(messages[Messages.Attributes] + info.Attributes);
             }
 
         }

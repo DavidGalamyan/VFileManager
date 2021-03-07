@@ -17,6 +17,12 @@ namespace VFileManager
         WrongPath,
         CommandSymbol,
         ListMessage,
+        FileInfo,
+        DirInfo,
+        CreationDate,
+        Attributes,
+        Size,
+        Bytes,
     }
 
     #endregion
@@ -34,6 +40,12 @@ namespace VFileManager
             { Messages.WrongPath, "Неправильный путь. Повторите ввод." },
             { Messages.CommandSymbol, ":>" },
             { Messages.ListMessage, "pageUp/pageDown (or arrows) - change pages. Q/Esc - stop." },
+            { Messages.FileInfo, "Информация о файле: " },
+            { Messages.DirInfo, "Информация о каталоге: " },
+            { Messages.CreationDate, "?Дата создания: *" },
+            { Messages.Attributes, "?Аттрибуты: *" },
+            { Messages.Size, "?Размер: *" },
+            { Messages.Bytes, " ?Bytes" },
         };
 
         /// <summary>Справка по коммандам
@@ -52,6 +64,8 @@ namespace VFileManager
             { "?files |[<path>] [-p <int>] *- вывод списка файлов" },
             { "?      |path *- путь к каталогу из файлов, если не указан то будет использован корень из списка каталогов" },
             { "?      |-p <int> *- номер страницы, default=1" },
+            { "?info  |[<path>] *- вывод информации о каталоге/файле" },
+            { "?      |path *- путь к каталогу/файлу информацию о котором необходимо вывести на экран" },
             { "?exit  |*- выход из программы" },
         };
 

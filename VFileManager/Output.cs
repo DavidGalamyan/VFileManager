@@ -53,15 +53,16 @@ namespace VFileManager
         #region ---- FIELDS ----
 
         Settings settings;
-        MessagesBase messages = new MessagesBase();
+        MessagesBase messages;
 
         #endregion
 
         #region ---- CONSTRUCTORS ----
 
-        public Output(Settings settings)
+        public Output(Settings settings, MessagesBase messages)
         {
             this.settings = settings;
+            this.messages = messages;
         }
 
         #endregion
@@ -240,7 +241,7 @@ namespace VFileManager
             }
         }
 
-        public void PrintList(Areas area, List<string> list, int page = 1)
+        public void PrintList(Areas area, List<string> list, int page = 1, bool isTurnPages = true)
         {
             ClearArea(area);
             PrintMessage(Areas.CommandInfoLine, Messages.ListMessage);
@@ -286,7 +287,7 @@ namespace VFileManager
 
 
                 //Обработка нажатий клавиатуры
-                if (pages > 1)//Если страниц больше одной, то включаем листалку
+                if (pages > 1 && isTurnPages)//Если страниц больше одной, то включаем листалку
                 {
                     Console.CursorVisible = false;
                     Console.SetCursorPosition(1, settings.CommandAreaLine);

@@ -31,7 +31,7 @@ namespace VFileManager
         /// <summary>Номер строки в которой происходит вывод списка файлов</summary>
         private const int FILELIST_AREA_LINE = 20;
         /// <summary>Номер строки в которой происходит вывод информации о файле/каталоге</summary>
-        private const int INFO_AREA_LINE = 33;
+        private const int INFO_AREA_LINE = 31;
         /// <summary>Номер строки в которой выводятся указания для пользователя</summary>
         private const int COMMAND_INFO_AREA_LINE = 36;
         /// <summary>Номер строки в которой происходит ввод комманд</summary>

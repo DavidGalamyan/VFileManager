@@ -63,10 +63,12 @@ namespace VFileManager
 
         /// <summary>Настройки приложения</summary>
         private static Settings settings = new Settings(settingsFile);
+        /// <summary>База текстовых сообщений</summary>
+        private static MessagesBase messages = new MessagesBase();
         /// <summary>Вывод на экран</summary>
-        private static Output output = new Output(settings);
+        private static Output output = new Output(settings, messages);
         /// <summary>Работа с файлами</summary>
-        private static FilesHandler filesHandler = new FilesHandler(settings);
+        private static FilesHandler filesHandler = new FilesHandler(settings, messages);
 
         /// <summary>Сюда будет помещаться список каталогов</summary>
         private static List<string> dirList = new List<string>();
@@ -80,9 +82,6 @@ namespace VFileManager
         static void Main(string[] args)
         {
             Init();//Инициализация
-
-            Console.Clear();
-            output.PrintMainFrame();
 
             //Основной цикл
             bool isExit = false;
@@ -133,8 +132,22 @@ namespace VFileManager
 
             //Устанавливаем размер консольного окна и буфера
             Console.SetWindowSize(settings.AppWidth + 1, settings.AppHeight + 1);
-            //Console.SetBufferSize(settings[SettingsKeys.AppWidth] + 1, settings[SettingsKeys.AppHeight] + 1);
+            Console.SetBufferSize(Console.WindowWidth, Console.WindowHeight);
 
+            Console.Clear();
+            output.PrintMainFrame();
+
+            //Вывод дерева последнего просматриваемого каталога
+            filesHandler.SeekDirectoryRecursion(settings.LastPath, dirList);
+            output.PrintList(Areas.DirList, dirList, 1, false);
+
+            //Вывод содержимого последнего просматриваемого каталога
+            filesHandler.SeekDirectoryForFiles(settings.LastPath, fileList);
+            output.PrintList(Areas.FileList, fileList, 1, false);
+
+            //Вывод информации о последнем просматриваемом каталоге
+            filesHandler.GetInfo(settings.LastPath, fileInfo);
+            output.PrintList(Areas.Info, fileInfo, 1, false);
         }
 
         #endregion
@@ -315,7 +328,7 @@ namespace VFileManager
             {
                 fileList.Clear();
                 filesHandler.SeekDirectoryForFiles(fullPath, fileList);
-                output.PrintList(Areas.FileList, fileList, page); ;
+                output.PrintList(Areas.FileList, fileList, page);
             }
             else
             {
@@ -329,14 +342,22 @@ namespace VFileManager
             string path = FindPath(inputWords, 1);//Каталог который сканируем
             string fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            //{
-            //    output.PrintMessage(Areas.Info, Messages.WrongPath);
-            //    Console.ReadKey();
-            //}
+            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            {
+                fullPath = settings.LastPath;//То устанавливаем предыдущий путь
+            }
 
             fileInfo.Clear();
             filesHandler.GetInfo(fullPath, fileInfo);
-            output.PrintList(Areas.Info, fileInfo); ;
+            if(fileInfo.Count != 0)
+            {
+                output.PrintList(Areas.Info, fileInfo);
+            }
+            else
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
+                Console.ReadKey();
+            }
 
         }
 
