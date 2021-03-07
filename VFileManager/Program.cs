@@ -25,6 +25,9 @@ namespace VFileManager
             Dir,//Вывод списка каталогов
             Files,//Вывод списка каталогов
             Info,//Вывод информации о файле
+            Copy,//Копирование файла/каталога
+            Move,//Перемещение файла/каталога
+            Delete,//удаление файла/каталога
             Exit,//Выход из программы
             WrongCommand,//Неправильная комманда
         }
@@ -36,6 +39,9 @@ namespace VFileManager
             { "dir", Commands.Dir },
             { "files", Commands.Files },
             { "info", Commands.Info },
+            { "copy", Commands.Copy },
+            { "move", Commands.Move },
+            { "del", Commands.Delete },
             { "exit", Commands.Exit },
         };
 
@@ -106,6 +112,18 @@ namespace VFileManager
 
                         case Commands.Info://Вывод списка файлов
                             Info(inputWords);
+                            break;
+
+                        case Commands.Copy://Копирование файла/каталога
+                            Copy(inputWords);
+                            break;
+
+                        case Commands.Move://Перемещение файла/каталога
+                            Move(inputWords);
+                            break;
+
+                        case Commands.Delete://Удаление файла/каталога
+                            Delete(inputWords);
                             break;
 
                         case Commands.Exit://Выход
@@ -337,6 +355,8 @@ namespace VFileManager
             }
         }
 
+        /// <summary>Вывод информации о файле/каталоге</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
         private static void Info(List<string> inputWords)
         {
             string path = FindPath(inputWords, 1);//Каталог который сканируем
@@ -358,6 +378,69 @@ namespace VFileManager
                 output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
                 Console.ReadKey();
             }
+
+        }
+
+        /// <summary>Копирование файла/каталога в указанное расположение</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        private static void Copy(List<string> inputWords)
+        {
+            string path = FindPath(inputWords, 1);
+            string fullPath = string.Empty;
+            if (path != null)
+                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            string path2 = FindPath(inputWords, 2);
+            string fullPath2 = string.Empty;
+            if (path2 != null)
+                fullPath2 = MakeFullPath(settings.LastPath, path2);//Преобразуем путь к нему в асолютный (если необходимо)
+
+
+            fileInfo.Clear();
+            fileInfo.Add("Copy");
+            fileInfo.Add(fullPath);
+            fileInfo.Add(fullPath2);
+            output.PrintList(Areas.Info, fileInfo);
+
+        }
+
+        /// <summary>Перемещение файла/каталога в указанное расположение</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        private static void Move(List<string> inputWords)
+        {
+            string path = FindPath(inputWords, 1);
+            string fullPath = string.Empty;
+            if (path != null)
+                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            string path2 = FindPath(inputWords, 2);
+            string fullPath2 = string.Empty;
+            if (path2 != null)
+                fullPath2 = MakeFullPath(settings.LastPath, path2);//Преобразуем путь к нему в асолютный (если необходимо)
+
+
+            fileInfo.Clear();
+            fileInfo.Add("Move");
+            fileInfo.Add(fullPath);
+            fileInfo.Add(fullPath2);
+            output.PrintList(Areas.Info, fileInfo);
+
+
+        }
+
+        /// <summary>Удаление файла/каталога в указанное расположение</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        private static void Delete(List<string> inputWords)
+        {
+            string path = FindPath(inputWords, 1);
+            string fullPath = string.Empty;
+            if(path != null)
+                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+
+            fileInfo.Clear();
+            fileInfo.Add("Delete");
+            fileInfo.Add(fullPath);
+            output.PrintList(Areas.Info, fileInfo);
 
         }
 
