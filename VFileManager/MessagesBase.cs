@@ -14,7 +14,11 @@ namespace VFileManager
         AppName,
         EnterCommand,
         WrongCommand,
+        WrongArguments,
         WrongPath,
+        WrongSourcePath,
+        WrongDestPath,
+        FileExist,
         CommandSymbol,
         ListMessage,
         FileInfo,
@@ -23,6 +27,7 @@ namespace VFileManager
         Attributes,
         Size,
         Bytes,
+        Success,
     }
 
     #endregion
@@ -37,7 +42,11 @@ namespace VFileManager
             { Messages.AppName, " VFileManager " },
             { Messages.EnterCommand, "Введите комманду. (help - для списка комманд)" },
             { Messages.WrongCommand, "Неправильная команда. Повторите ввод." },
+            { Messages.WrongArguments, "Неправильные аргументы. Повторите ввод." },
             { Messages.WrongPath, "Неправильный путь. Повторите ввод." },
+            { Messages.WrongSourcePath, "Неправильный путь источника. Повторите ввод." },
+            { Messages.WrongDestPath, "Неправильный путь к цели. Повторите ввод." },
+            { Messages.FileExist, "файл уже существует." },
             { Messages.CommandSymbol, ":>" },
             { Messages.ListMessage, "pageUp/pageDown (or arrows) - change pages. Q/Esc - stop." },
             { Messages.FileInfo, "Информация о файле: " },
@@ -46,6 +55,7 @@ namespace VFileManager
             { Messages.Attributes, "?Аттрибуты: *" },
             { Messages.Size, "?Размер: *" },
             { Messages.Bytes, " ?Bytes" },
+            { Messages.Success, "Успешно." },
         };
 
         /// <summary>Справка по коммандам
@@ -66,6 +76,16 @@ namespace VFileManager
             { "?      |-p <int> *- номер страницы, default=1" },
             { "?info  |[<path>] *- вывод информации о каталоге/файле" },
             { "?      |path *- путь к каталогу/файлу информацию о котором необходимо вывести на экран" },
+            { "?copy  |<file name>, <destination dir> *- копирование файла" },
+            { "?move  |<file name>, <destination dir> *- перемещение файла" },
+            { "?del   |<file name>*- удалить файл" },
+            { "?      |file name *- путь к файлу который нужно скопировать/переместить или удалить" },
+            { "?      |destination dir *- путь к каталогу куда нужно скопировать или переместить указанный файл" },
+            { "?dcopy |<dir name>, <destination dir> *- копирование файла" },
+            { "?dmove |<dir name>, <destination dir> *- перемещение файла" },
+            { "?ddel  |<dir name> *- удалить файл" },
+            { "?      |dir name *- путь к каталогу который нужно скопировать/переместить или удалить" },
+            { "?      |destination dir *- путь к каталогу куда нужно скопировать или переместить указанный объект" },
             { "?exit  |*- выход из программы" },
         };
 

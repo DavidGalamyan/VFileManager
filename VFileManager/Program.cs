@@ -25,9 +25,12 @@ namespace VFileManager
             Dir,//Вывод списка каталогов
             Files,//Вывод списка каталогов
             Info,//Вывод информации о файле
-            Copy,//Копирование файла/каталога
-            Move,//Перемещение файла/каталога
-            Delete,//удаление файла/каталога
+            Copy,//Копирование файла
+            DirCopy,//Копирование каталога
+            Move,//Перемещение файла
+            DirMove,//Перемещение каталога
+            Delete,//удаление файла
+            DirDelete,//удаление каталога
             Exit,//Выход из программы
             WrongCommand,//Неправильная комманда
         }
@@ -40,8 +43,11 @@ namespace VFileManager
             { "files", Commands.Files },
             { "info", Commands.Info },
             { "copy", Commands.Copy },
+            { "dcopy", Commands.DirCopy },
             { "move", Commands.Move },
+            { "dmove", Commands.DirMove },
             { "del", Commands.Delete },
+            { "ddel", Commands.DirDelete },
             { "exit", Commands.Exit },
         };
 
@@ -385,22 +391,56 @@ namespace VFileManager
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
         private static void Copy(List<string> inputWords)
         {
-            string path = FindPath(inputWords, 1);
-            string fullPath = string.Empty;
-            if (path != null)
-                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+            //Проверяем количество введенных аргументов
+            if(inputWords.Count<3)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
+                Console.ReadKey();
+                return;
+            }
 
-            string path2 = FindPath(inputWords, 2);
-            string fullPath2 = string.Empty;
-            if (path2 != null)
-                fullPath2 = MakeFullPath(settings.LastPath, path2);//Преобразуем путь к нему в асолютный (если необходимо)
+            //Анализ путей
+            //Извлекаем имя файла который копируем
+            string sourceFileName = MakeFullPath(settings.LastPath, FindPath(inputWords, 1));//Преобразуем путь к нему в асолютный (если необходимо)
+            //Извлекаем путь к каталогу куда копируем файл
+            string destFullPath = MakeFullPath(settings.LastPath, FindPath(inputWords, 2));//Преобразуем путь к нему в асолютный (если необходимо)
+            string destFileName = MakeFullPath(destFullPath, Path.GetFileName(sourceFileName));//Добавляем имя файла к имени пути назначения
 
+            //Проверить существует ли объект по пути источника
+            if (!filesHandler.IsFileExist(sourceFileName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                Console.ReadKey();
+                return;
+            }
 
-            fileInfo.Clear();
-            fileInfo.Add("Copy");
-            fileInfo.Add(fullPath);
-            fileInfo.Add(fullPath2);
-            output.PrintList(Areas.Info, fileInfo);
+            //Проверить правильный ли путь назначения
+            if (!filesHandler.IsPathValid(destFullPath))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongDestPath);
+                Console.ReadKey();
+                return;
+            }
+
+            if (sourceFileName != destFileName)//Если имя файла источника и назначения не совпадает
+            {
+                if (!filesHandler.IsDirExist(destFullPath))//Если каталог назначения не существует, то создаем его
+                    Directory.CreateDirectory(destFullPath);
+
+                File.Copy(sourceFileName, destFileName);//Копируем файл
+            }
+
+            else
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
+                Console.ReadKey();
+                return;
+            }
+
+            output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            Console.ReadKey();
+            return;
+
 
         }
 
@@ -413,16 +453,15 @@ namespace VFileManager
             if (path != null)
                 fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            string path2 = FindPath(inputWords, 2);
-            string fullPath2 = string.Empty;
-            if (path2 != null)
-                fullPath2 = MakeFullPath(settings.LastPath, path2);//Преобразуем путь к нему в асолютный (если необходимо)
-
+            string destPath = FindPath(inputWords, 2);
+            string destFullPath = string.Empty;
+            if (destPath != null)
+                destFullPath = MakeFullPath(settings.LastPath, destPath);//Преобразуем путь к нему в асолютный (если необходимо)
 
             fileInfo.Clear();
             fileInfo.Add("Move");
             fileInfo.Add(fullPath);
-            fileInfo.Add(fullPath2);
+            fileInfo.Add(destFullPath);
             output.PrintList(Areas.Info, fileInfo);
 
 

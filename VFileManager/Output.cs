@@ -290,7 +290,7 @@ namespace VFileManager
                 if (pages > 1 && isTurnPages)//Если страниц больше одной, то включаем листалку
                 {
                     Console.CursorVisible = false;
-                    Console.SetCursorPosition(1, settings.CommandAreaLine);
+                    Console.SetCursorPosition(settings.AppWidth-2, settings.CommandAreaLine);
                     ConsoleKeyInfo key = Console.ReadKey();
                     switch (key.Key)
                     {

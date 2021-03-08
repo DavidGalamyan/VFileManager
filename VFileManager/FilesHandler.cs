@@ -76,6 +76,19 @@ namespace VFileManager
             return isExist;
         }
 
+        /// <summary>
+        /// Проверяет чем является объект по указанному пути - файлом или каталогом
+        /// Путь должен быть заранее проверен на валидность
+        /// </summary>
+        /// <param name="path">Путь для проверки</param>
+        /// <returns>true, если объект является файлом
+        /// false, если объект является каталогом</returns>
+        public bool IsPathFile(string path)
+        {
+            FileInfo fileInfo = new FileInfo(path);
+            return fileInfo.Exists;
+        }
+
         #endregion
 
         #region ---- WORK WITH FILES ----
