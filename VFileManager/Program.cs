@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -389,14 +390,16 @@ namespace VFileManager
 
         /// <summary>Копирование файла/каталога в указанное расположение</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
-        private static void Copy(List<string> inputWords)
+        private static bool Copy(List<string> inputWords)
         {
+            bool isSucces = false;
+
             //Проверяем количество введенных аргументов
             if(inputWords.Count<3)
             {
                 output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
                 Console.ReadKey();
-                return;
+                return isSucces;
             }
 
             //Анализ путей
@@ -411,7 +414,7 @@ namespace VFileManager
             {
                 output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
                 Console.ReadKey();
-                return;
+                return isSucces;
             }
 
             //Проверить правильный ли путь назначения
@@ -419,7 +422,15 @@ namespace VFileManager
             {
                 output.PrintMessage(Areas.CommandInfoLine, Messages.WrongDestPath);
                 Console.ReadKey();
-                return;
+                return isSucces;
+            }
+
+            //Проверить существует ли объект там куда мы перемещаем файл
+            if (filesHandler.IsFileExist(destFileName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
+                Console.ReadKey();
+                return isSucces;
             }
 
             if (sourceFileName != destFileName)//Если имя файла источника и назначения не совпадает
@@ -427,60 +438,130 @@ namespace VFileManager
                 if (!filesHandler.IsDirExist(destFullPath))//Если каталог назначения не существует, то создаем его
                     Directory.CreateDirectory(destFullPath);
 
-                File.Copy(sourceFileName, destFileName);//Копируем файл
+                //Копируем файл
+                isSucces = filesHandler.FileCopy(sourceFileName, destFileName);
             }
-
             else
             {
                 output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
                 Console.ReadKey();
-                return;
+                return isSucces;
             }
 
-            output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            if(isSucces)
+                output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            else
+                output.PrintMessage(Areas.CommandInfoLine, Messages.UnSuccess);
             Console.ReadKey();
-            return;
 
-
+            return isSucces;
         }
 
         /// <summary>Перемещение файла/каталога в указанное расположение</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
-        private static void Move(List<string> inputWords)
+        private static bool Move(List<string> inputWords)
         {
-            string path = FindPath(inputWords, 1);
-            string fullPath = string.Empty;
-            if (path != null)
-                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+            bool isSucces = false;
 
-            string destPath = FindPath(inputWords, 2);
-            string destFullPath = string.Empty;
-            if (destPath != null)
-                destFullPath = MakeFullPath(settings.LastPath, destPath);//Преобразуем путь к нему в асолютный (если необходимо)
+            //Проверяем количество введенных аргументов
+            if (inputWords.Count < 3)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
+                Console.ReadKey();
+                return isSucces;
+            }
 
-            fileInfo.Clear();
-            fileInfo.Add("Move");
-            fileInfo.Add(fullPath);
-            fileInfo.Add(destFullPath);
-            output.PrintList(Areas.Info, fileInfo);
+            //Анализ путей
+            //Извлекаем имя файла который копируем
+            string sourceFileName = MakeFullPath(settings.LastPath, FindPath(inputWords, 1));//Преобразуем путь к нему в асолютный (если необходимо)
+            //Извлекаем путь к каталогу куда копируем файл
+            string destFullPath = MakeFullPath(settings.LastPath, FindPath(inputWords, 2));//Преобразуем путь к нему в асолютный (если необходимо)
+            string destFileName = MakeFullPath(destFullPath, Path.GetFileName(sourceFileName));//Добавляем имя файла к имени пути назначения
 
+            //Проверить существует ли объект по пути источника
+            if (!filesHandler.IsFileExist(sourceFileName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                Console.ReadKey();
+                return isSucces;
+            }
 
+            //Проверить правильный ли путь назначения
+            if (!filesHandler.IsPathValid(destFullPath))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongDestPath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            //Проверить существует ли объект там куда мы перемещаем файл
+            if (filesHandler.IsFileExist(destFileName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            if (sourceFileName != destFileName)//Если имя файла источника и назначения не совпадает
+            {
+                if (!filesHandler.IsDirExist(destFullPath))//Если каталог назначения не существует, то создаем его
+                    Directory.CreateDirectory(destFullPath);
+
+                //Перемещаем файл
+                isSucces = filesHandler.FileMove(sourceFileName, destFileName);
+            }
+            else
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            if (isSucces)
+                output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            else
+                output.PrintMessage(Areas.CommandInfoLine, Messages.UnSuccess);
+            Console.ReadKey();
+
+            return isSucces;
         }
 
         /// <summary>Удаление файла/каталога в указанное расположение</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
-        private static void Delete(List<string> inputWords)
+        private static bool Delete(List<string> inputWords)
         {
-            string path = FindPath(inputWords, 1);
-            string fullPath = string.Empty;
-            if(path != null)
-                fullPath = MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
+            bool isSucces = false;
 
-            fileInfo.Clear();
-            fileInfo.Add("Delete");
-            fileInfo.Add(fullPath);
-            output.PrintList(Areas.Info, fileInfo);
+            //Проверяем количество введенных аргументов
+            if (inputWords.Count < 2)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
+                Console.ReadKey();
+                return isSucces;
+            }
 
+            //Анализ путей
+            //Извлекаем имя файла который копируем
+            string sourceFileName = MakeFullPath(settings.LastPath, FindPath(inputWords, 1));//Преобразуем путь к нему в асолютный (если необходимо)
+
+            //Проверить существует ли объект по пути источника
+            if (!filesHandler.IsFileExist(sourceFileName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            //Удаляем файл
+            isSucces = filesHandler.FileDelete(sourceFileName);
+
+            if (isSucces)
+                output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            else
+                output.PrintMessage(Areas.CommandInfoLine, Messages.UnSuccess);
+            Console.ReadKey();
+
+            return isSucces;
         }
 
 

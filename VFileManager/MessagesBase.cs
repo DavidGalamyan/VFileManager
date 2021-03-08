@@ -28,6 +28,7 @@ namespace VFileManager
         Size,
         Bytes,
         Success,
+        UnSuccess,
     }
 
     #endregion
@@ -56,6 +57,7 @@ namespace VFileManager
             { Messages.Size, "?Размер: *" },
             { Messages.Bytes, " ?Bytes" },
             { Messages.Success, "Успешно." },
+            { Messages.UnSuccess, "Что-то пошло не так." },
         };
 
         /// <summary>Справка по коммандам

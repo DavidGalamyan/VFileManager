@@ -221,6 +221,116 @@ namespace VFileManager
 
         }
 
+        /// <summary>
+        /// Копирует файл с отображением прогресс бара
+        /// Заданнные пути файлов должны быть прловрены.
+        /// </summary>
+        /// <param name="sourceFileName">Имя копируемый файл</param>
+        /// <param name="destFileName">Имя конечного файла</param>
+        /// <returns>true, если процесс копирования прошел успешно.</returns>
+        public bool FileCopy(string sourceFileName, string destFileName)
+        {
+            bool isSucces = true;
+
+            //Потоки для файлов
+            FileStream source = null;
+            FileStream destination = null;
+
+            int data;//Сюда будет заноситься очередной байт для копирования
+
+            try
+            {
+                //Открытие файлов
+                source = new FileStream(sourceFileName, FileMode.Open);
+                destination = new FileStream(destFileName, FileMode.Create);
+
+                long length = source.Length;//Длина файла в байтах для прогресс бара.
+                long current = 0;//Счетчик скопированных байтов.
+                int percent = 0;
+                int percentOld = 0;
+
+                //Копирование файлов побайтно
+                data = source.ReadByte();
+                while (data != -1)
+                {
+                    //Копирование
+                    destination.WriteByte((byte)data);
+                    data = source.ReadByte();
+
+                    //Прогресс бар !TODO переделать.
+                    current++;
+                    percentOld = percent;
+                    percent = (int)(current * 100 / length);
+                    if (percent>percentOld)
+                    {
+                        Console.SetCursorPosition(1, settings.CommandAreaLine);
+                        Console.WriteLine($"Copied {percent}% from 100%                                    ");
+                    }
+
+                }
+            }
+            catch
+            {
+                //!TODO если ошибка при копировании
+                isSucces = false;
+            }
+            finally
+            {
+                // Закрытие файлов
+                if (source != null) source.Close();
+                if (destination != null) destination.Close();
+            }
+            return isSucces;
+
+        }
+
+        /// <summary>
+        /// Перемещает указанный файл
+        /// Заданнные пути файлов должны быть прловрены.
+        /// </summary>
+        /// <param name="sourceFileName">Имя копируемый файл</param>
+        /// <param name="destFileName">Имя конечного файла</param>
+        /// <returns>true, если процесс перемещения прошел успешно.</returns>
+        public bool FileMove(string sourceFileName, string destFileName)
+        {
+            bool isSucces = true;
+
+            try
+            {
+                File.Move(sourceFileName, destFileName);
+            }
+            catch
+            {
+                isSucces = false;
+                //!TODO
+            }
+
+            return isSucces;
+        }
+
+        /// <summary>
+        /// Удаляет указанный файл
+        /// Заданнные пути к файлу должен быть прловрен.
+        /// </summary>
+        /// <param name="sourceFileName">Имя копируемый файл</param>
+        /// <returns>true, если процесс перемещения прошел успешно.</returns>
+        public bool FileDelete(string sourceFileName)
+        {
+            bool isSucces = true;
+
+            try
+            {
+                File.Delete(sourceFileName);
+            }
+            catch
+            {
+                isSucces = false;
+                //!TODO
+            }
+
+            return isSucces;
+        }
+
 
         #endregion
     }
