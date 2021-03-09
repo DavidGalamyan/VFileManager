@@ -11,30 +11,6 @@ namespace VFileManager
 {
     class Settings
     {
-        #region ---- DEFAULT SETTINGS ----
-
-        /// <summary>Ширина окна приложения</summary>
-        private const int APP_WIDTH = 120;
-        /// <summary>Высота окна приложения</summary>
-        private const int APP_HEIGHT = 40;
-
-        /// <summary>Стандартная глубина для выводимого дерева каталогов</summary>
-        private const int MAX_LEVEL_DEFAULT = 2;
-
-
-        /// <summary>Номер строки в которой происходит вывод списка каталогов</summary>
-        private const int DIRLIST_AREA_LINE = 1;
-        /// <summary>Номер строки в которой происходит вывод списка файлов</summary>
-        private const int FILELIST_AREA_LINE = 20;
-        /// <summary>Номер строки в которой происходит вывод информации о файле/каталоге</summary>
-        private const int INFO_AREA_LINE = 31;
-        /// <summary>Номер строки в которой выводятся указания для пользователя</summary>
-        private const int COMMAND_INFO_AREA_LINE = 36;
-        /// <summary>Номер строки в которой происходит ввод комманд</summary>
-        private const int COMMAND_AREA_LINE = 38;
-
-        #endregion
-
         #region ---- FIELDS ----
 
         /// <summary>Имя файла с настройками</summary>
@@ -43,6 +19,7 @@ namespace VFileManager
         /// <summary>Ключи для словаря числовых настроек</summary>
         private enum SettingsKeys
         {
+            Version,
             AppWidth,
             AppHeight,
             MaxLevelDefault,
@@ -55,23 +32,10 @@ namespace VFileManager
         }
 
         /// <summary>Словарь содержащий текстовые настройки приложения</summary>
-        private Dictionary<SettingsKeys, string> stringSettings = new Dictionary<SettingsKeys, string>
-        {
-            { SettingsKeys.LastPath, AppContext.BaseDirectory },
-        };
+        private Dictionary<SettingsKeys, string> stringSettings;
 
         /// <summary>Словарь содержащий числовые настройки приложения</summary>
-        private Dictionary<SettingsKeys, int> numericSettings = new Dictionary<SettingsKeys, int>
-        {
-            { SettingsKeys.AppWidth, APP_WIDTH },
-            { SettingsKeys.AppHeight, APP_HEIGHT },
-            { SettingsKeys.MaxLevelDefault, MAX_LEVEL_DEFAULT},
-            { SettingsKeys.DirListAreaLine, DIRLIST_AREA_LINE},
-            { SettingsKeys.FileListAreaLine, FILELIST_AREA_LINE},
-            { SettingsKeys.InfoAreaLine, INFO_AREA_LINE},
-            { SettingsKeys.CommandInfoAreaLine, COMMAND_INFO_AREA_LINE},
-            { SettingsKeys.CommandAreaLine, COMMAND_AREA_LINE},
-        };
+        private Dictionary<SettingsKeys, int> numericSettings;
 
         #endregion
 
@@ -227,12 +191,36 @@ namespace VFileManager
         public Settings(string settingsFileName)
         {
             this.settingsFileName = settingsFileName;
+            InitSettings();
         }
 
         #endregion
 
         #region ---- METHODS ----
 
+        private void InitSettings()
+        {
+            /// <summary>Словарь содержащий текстовые настройки приложения</summary>
+            stringSettings = new Dictionary<SettingsKeys, string>
+            {
+                { SettingsKeys.Version, Properties.Settings.Default.Version },
+                { SettingsKeys.LastPath, AppContext.BaseDirectory },
+            };
+
+            /// <summary>Словарь содержащий числовые настройки приложения</summary>
+            numericSettings = new Dictionary<SettingsKeys, int>
+            {
+                { SettingsKeys.AppWidth, Properties.Settings.Default.AppWidth },
+                { SettingsKeys.AppHeight, Properties.Settings.Default.AppHeight },
+                { SettingsKeys.MaxLevelDefault, Properties.Settings.Default.MaxLevelDefault },
+                { SettingsKeys.DirListAreaLine, Properties.Settings.Default.DirListAreaLine },
+                { SettingsKeys.FileListAreaLine, Properties.Settings.Default.FileListAreaLine },
+                { SettingsKeys.InfoAreaLine, Properties.Settings.Default.InfoAreaLine },
+                { SettingsKeys.CommandInfoAreaLine, Properties.Settings.Default.CommandInfoAreaLine },
+                { SettingsKeys.CommandAreaLine, Properties.Settings.Default.CommandAreaLine },
+            };
+
+        }
 
         /// <summary>Сохранение настроек в файл</summary>
         public void SaveSettings()
@@ -267,7 +255,6 @@ namespace VFileManager
 
         }
 
-
         /// <summary>Чтение настроек из файла</summary>
         public void LoadSettings()
         {
@@ -288,6 +275,13 @@ namespace VFileManager
             }
             else
             {
+                SaveSettings();
+            }
+
+            //Если файл настроек от другой версии приложения, то перезаписываем его дефолтным для текущей версии
+            if(stringSettings[SettingsKeys.Version] != Properties.Settings.Default.Version)
+            {
+                InitSettings();
                 SaveSettings();
             }
 
