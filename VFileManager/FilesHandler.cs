@@ -277,6 +277,10 @@ namespace VFileManager
 
             try
             {
+                FileInfo destFileInfo = new FileInfo(destFileName);
+                //Если каталога назначения нету, то создадим его
+                Directory.CreateDirectory(destFileInfo.DirectoryName);
+
                 source = new FileStream(sourceFileName, FileMode.Open);
                 destination = new FileStream(destFileName, FileMode.Create);
 
@@ -333,6 +337,10 @@ namespace VFileManager
 
             try
             {
+                FileInfo destFileInfo = new FileInfo(destFileName);
+                //Если каталога назначения нету, то создадим его
+                Directory.CreateDirectory(destFileInfo.DirectoryName);
+
                 File.Move(sourceFileName, destFileName);
             }
             catch
@@ -367,6 +375,47 @@ namespace VFileManager
             return isSucces;
         }
 
+
+        public bool DirCopyMove(string sourceDirName, string destDirName, bool isMove = false)
+        {
+            bool isSuccess = true;
+
+            DirectoryInfo sourceDir = new DirectoryInfo(sourceDirName);
+
+            DirectoryInfo[] dirContent = sourceDir.GetDirectories();
+
+            Directory.CreateDirectory(destDirName);
+
+            FileInfo[] dirFiles = sourceDir.GetFiles();
+            foreach (FileInfo currentFile in dirFiles)
+            {
+                string tempDestPath = Path.Combine(destDirName, currentFile.Name);
+                if (!isMove)
+                    FileCopy(currentFile.FullName, tempDestPath);
+                else
+                    FileMove(currentFile.FullName, tempDestPath);
+            }
+
+            foreach(DirectoryInfo currentDir in dirContent)
+            {
+                string tempDestPath = Path.Combine(destDirName, currentDir.Name);
+                DirCopyMove(currentDir.FullName, tempDestPath, isMove);
+            }
+
+            if (isMove)
+                try
+                {
+                    Directory.Delete(sourceDir.FullName);
+                }
+                catch
+                {
+                    isSuccess = false;
+                    //!TODO
+                }
+
+            return isSuccess;
+        }
+
         /// <summary>
         /// Удаляет указанный каталог
         /// Заданнный путь к каталогу должен быть прловрен.
@@ -377,22 +426,23 @@ namespace VFileManager
         {
             bool isSucces = true;
 
-            DirectoryInfo[] dirContent = new DirectoryInfo(sourceDirName).GetDirectories();
-            if(dirContent.Length>0)
+            //Информация о текущем каталоге
+            DirectoryInfo sourceDir = new DirectoryInfo(sourceDirName);
+
+            //Получаем все подкаталоги текущего каталога 
+            DirectoryInfo[] dirContent = sourceDir.GetDirectories();
+            //И если они есть, то вызываем их удаление рекурсивно
+            foreach (DirectoryInfo currentDir in dirContent)
             {
-                foreach(DirectoryInfo currentDir in dirContent)
-                {
-                    DirDelete(currentDir.FullName);
-                }
+                DirDelete(currentDir.FullName);
             }
 
-            FileInfo[] dirFiles = new DirectoryInfo(sourceDirName).GetFiles();
-            if (dirFiles.Length > 0)
+            //Получаем список файлов в текущем каталоге
+            FileInfo[] dirFiles = sourceDir.GetFiles();
+            //И если они есть, то удаляем их
+            foreach (FileInfo currentFile in dirFiles)
             {
-                foreach (FileInfo currentFile in dirFiles)
-                {
-                    isSucces = FileDelete(currentFile.FullName);
-                }
+                isSucces = FileDelete(currentFile.FullName);
             }
 
             try
@@ -407,6 +457,8 @@ namespace VFileManager
 
             return isSucces;
         }
+
+
         #endregion
     }
 }

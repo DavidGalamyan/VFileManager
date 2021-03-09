@@ -106,6 +106,14 @@ namespace VFileManager
                             commands.FileDelete(inputWords);
                             break;
 
+                        case Commands.DirCopy://Копирование файла
+                            commands.DirCopyMove(inputWords, Commands.Copy);
+                            break;
+
+                        case Commands.DirMove://Перемещение файла
+                            commands.DirCopyMove(inputWords, Commands.Move);
+                            break;
+
                         case Commands.DirDelete://Удаление каталога
                             commands.DirDelete(inputWords);
                             break;

@@ -276,8 +276,6 @@ namespace VFileManager
 
                 if (sourceFileInfo.Exists && !destFileInfo.Exists)//Проверка на то, что файл уже существует
                 {
-                    //Если каталога назначения нету, то создадим его
-                    Directory.CreateDirectory(destFileInfo.DirectoryName);
                     //Выбор нужной команды
                     switch (command)
                     {
@@ -306,6 +304,100 @@ namespace VFileManager
 
             return isSucces;
         }
+
+        public bool DirCopyMove(List<string> inputWords, Commands command)
+        {
+            bool isSucces = false;
+
+            //Проверяем количество введенных аргументов
+            if (inputWords.Count < 3)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            //Проверяем на то, что заданный путь не состоит только из символов '.','/','\'
+            //Чтобы избежать конфликтных ситуаций с удалением каталогов выше текущего уровня
+            bool isPathGood = false;
+            foreach (char symbol in inputWords[1])
+            {
+                if (symbol != '.' && symbol != '/' && symbol != '\\')
+                    isPathGood = true;
+            }
+            if (!isPathGood)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            isPathGood = false;
+            foreach (char symbol in inputWords[2])
+            {
+                if (symbol != '.' && symbol != '/' && symbol != '\\')
+                    isPathGood = true;
+            }
+            if (!isPathGood)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+
+
+            //Извлекаем имя каталога который копируем
+            //Преобразуем путь к нему в асолютный (если необходимо)
+            string sourceDirName = filesHandler.MakeFullPath(settings.LastPath, filesHandler.FindPath(inputWords, 1));
+
+            //Извлекаем путь к каталогу куда копируем каталог
+            //Преобразуем путь к нему в асолютный (если необходимо)
+            string destDirName = filesHandler.MakeFullPath(settings.LastPath, filesHandler.FindPath(inputWords, 2));
+
+
+
+            try
+            {
+                //Информация о каталогах
+                DirectoryInfo sourceDirInfo = new DirectoryInfo(sourceDirName);
+                //Прибавляем к пути назначение название каталога который копируем/переносим
+                destDirName = Path.Combine(destDirName, sourceDirInfo.Name);
+                DirectoryInfo destDirInfo = new DirectoryInfo(destDirName);
+
+                if (sourceDirInfo.Exists && sourceDirName != destDirName)//Проверка на то, что файл уже существует
+                {
+                    //Выбор нужной команды
+                    bool isMove = false;
+                    switch (command)
+                    {
+                        case Commands.Copy:
+                            isMove = false;
+                            break;
+                        case Commands.Move:
+                            isMove = true;
+                            break;
+                    }
+                    isSucces = filesHandler.DirCopyMove(sourceDirName, destDirName, isMove);
+                }
+                else
+                {
+                    output.PrintMessage(Areas.CommandInfoLine, Messages.DirExist);
+                }
+            }
+            catch (Exception excp)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, excp.Message);
+            }
+
+            if (isSucces)
+                output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+            Console.ReadKey();
+            Refresh(settings.LastPath);
+
+            return isSucces;
+        }
+
 
 
         /// <summary>Удаление файла в указанном расположении</summary>
