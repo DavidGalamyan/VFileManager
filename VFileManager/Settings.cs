@@ -13,10 +13,6 @@ namespace VFileManager
     {
         #region ---- DEFAULT SETTINGS ----
 
-        /// <summary>Дефолтное значение пути просматриваемого каталога</summary>
-        private const string DEFAULT_PATH = "C:\\";
-
-
         /// <summary>Ширина окна приложения</summary>
         private const int APP_WIDTH = 120;
         /// <summary>Высота окна приложения</summary>
@@ -61,7 +57,7 @@ namespace VFileManager
         /// <summary>Словарь содержащий текстовые настройки приложения</summary>
         private Dictionary<SettingsKeys, string> stringSettings = new Dictionary<SettingsKeys, string>
         {
-            { SettingsKeys.LastPath, DEFAULT_PATH },
+            { SettingsKeys.LastPath, AppContext.BaseDirectory },
         };
 
         /// <summary>Словарь содержащий числовые настройки приложения</summary>
@@ -339,6 +335,13 @@ namespace VFileManager
                 numericSettings[SettingsKeys.CommandAreaLine] = numericSettings[SettingsKeys.AppHeight] - 2;
             if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 4)//Положение информационной строки
                 numericSettings[SettingsKeys.InfoAreaLine] = numericSettings[SettingsKeys.CommandAreaLine] - 4;
+
+            //Проверка дефолтного каталога
+            if (!new DirectoryInfo(stringSettings[SettingsKeys.LastPath]).Exists)
+            {
+                //Если отсутствует, то меняем на тот из которого запускалась программа.
+                stringSettings[SettingsKeys.LastPath] = AppContext.BaseDirectory;
+            }
         }
 
         #endregion
