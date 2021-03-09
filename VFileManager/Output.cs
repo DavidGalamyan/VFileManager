@@ -163,6 +163,17 @@ namespace VFileManager
             }
         }
 
+        /// <summary>Выводит сообщение с заданной области</summary>
+        /// <param name="area">ОБласть экрана в которой нужно вывести сообщение</param>
+        /// <param name="message">Ключ в словаре сообщений</param>
+        public void PrintMessage(Areas area, string message)
+        {
+            ClearArea(area);
+            (int row, _) = GetAreaRows(area);
+            Console.SetCursorPosition(1, row);
+            Console.Write(message);
+        }
+
         //!TODO переделать
         /// <summary>Выводит на экран справку по коммандам</summary>
         public void PrintManual()
@@ -244,7 +255,6 @@ namespace VFileManager
         public void PrintList(Areas area, List<string> list, int page = 1, bool isTurnPages = true)
         {
             ClearArea(area);
-            PrintMessage(Areas.CommandInfoLine, Messages.ListMessage);
 
             (int firstRow, int lastRow) = GetAreaRows(area);
             int lines = lastRow - firstRow - 1;//Количество линий списка выводимых на экран за один раз
@@ -289,6 +299,7 @@ namespace VFileManager
                 //Обработка нажатий клавиатуры
                 if (pages > 1 && isTurnPages)//Если страниц больше одной, то включаем листалку
                 {
+                    PrintMessage(Areas.CommandInfoLine, Messages.ListMessage);
                     Console.CursorVisible = false;
                     Console.SetCursorPosition(settings.AppWidth-2, settings.CommandAreaLine);
                     ConsoleKeyInfo key = Console.ReadKey();

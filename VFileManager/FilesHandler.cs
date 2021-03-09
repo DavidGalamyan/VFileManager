@@ -29,6 +29,27 @@ namespace VFileManager
         #region ---- CHECKS ----
 
         /// <summary>
+        /// Ищет путь к файлу или каталогу в списке слов
+        /// </summary>
+        /// <param name="words">Список слов</param>
+        /// <param name="number">Порядковый номер слова в списке которое надо проанализировать на наличие пути</param>
+        /// <returns>Строку с найденым путем или пустую строку если путь не найден</returns>
+        public string FindPath(List<string> words, int number)
+        {
+            string path = null;//Здесь будет найденный путь
+
+            if (number < words.Count) //Есть ли в списке слово под нужным индексом
+            {
+                if (IsPathValid(words[number]))//Проверяем на отсутвие запрещенных символов
+                {
+                    path = words[number];
+                }
+            }
+
+            return path;
+        }
+
+        /// <summary>
         /// Проверяет на правильность заданный путь к файлу
         /// </summary>
         /// <param name="path">Путь к файлу</param>
@@ -87,6 +108,22 @@ namespace VFileManager
         {
             FileInfo fileInfo = new FileInfo(path);
             return fileInfo.Exists;
+        }
+
+        /// <summary>
+        /// Собирает из относительного и полного пути (корневого каталога) один полный
+        /// </summary>
+        /// <param name="rootPath">Путь к корневому каталогу</param>
+        /// <param name="path">Относительный путь к каталогу/файлу</param>
+        /// <returns>Полный путь к файлу/каталогу</returns>
+        public string MakeFullPath(string rootPath, string path)
+        {
+            if (path == null)
+                return rootPath;
+            else if (path == "..")
+                return (Path.GetDirectoryName(rootPath));
+            else
+                return (Path.Combine(rootPath, path));
         }
 
         #endregion
@@ -240,7 +277,6 @@ namespace VFileManager
 
             try
             {
-                //Открытие файлов
                 source = new FileStream(sourceFileName, FileMode.Open);
                 destination = new FileStream(destFileName, FileMode.Create);
 
