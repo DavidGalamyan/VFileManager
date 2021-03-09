@@ -367,7 +367,46 @@ namespace VFileManager
             return isSucces;
         }
 
+        /// <summary>
+        /// Удаляет указанный каталог
+        /// Заданнный путь к каталогу должен быть прловрен.
+        /// </summary>
+        /// <param name="sourceDirName">Путь к удаляемому каталогу</param>
+        /// <returns>true, если процесс удаления прошел успешно.</returns>
+        public bool DirDelete(string sourceDirName)
+        {
+            bool isSucces = true;
 
+            DirectoryInfo[] dirContent = new DirectoryInfo(sourceDirName).GetDirectories();
+            if(dirContent.Length>0)
+            {
+                foreach(DirectoryInfo currentDir in dirContent)
+                {
+                    DirDelete(currentDir.FullName);
+                }
+            }
+
+            FileInfo[] dirFiles = new DirectoryInfo(sourceDirName).GetFiles();
+            if (dirFiles.Length > 0)
+            {
+                foreach (FileInfo currentFile in dirFiles)
+                {
+                    isSucces = FileDelete(currentFile.FullName);
+                }
+            }
+
+            try
+            {
+                Directory.Delete(sourceDirName);
+            }
+            catch
+            {
+                isSucces = false;
+                //!TODO
+            }
+
+            return isSucces;
+        }
         #endregion
     }
 }

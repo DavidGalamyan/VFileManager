@@ -94,16 +94,20 @@ namespace VFileManager
                             commands.Info(inputWords);
                             break;
 
-                        case Commands.Copy://Копирование файла/каталога
+                        case Commands.Copy://Копирование файла
                             commands.FileCopyMove(inputWords, Commands.Copy);
                             break;
 
-                        case Commands.Move://Перемещение файла/каталога
+                        case Commands.Move://Перемещение файла
                             commands.FileCopyMove(inputWords, Commands.Move);
                             break;
 
-                        case Commands.Delete://Удаление файла/каталога
+                        case Commands.Delete://Удаление файла
                             commands.FileDelete(inputWords);
+                            break;
+
+                        case Commands.DirDelete://Удаление каталога
+                            commands.DirDelete(inputWords);
                             break;
 
                         case Commands.Exit://Выход

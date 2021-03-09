@@ -308,7 +308,7 @@ namespace VFileManager
         }
 
 
-        /// <summary>Удаление файла/каталога в указанное расположение</summary>
+        /// <summary>Удаление файла в указанном расположении</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
         public bool FileDelete(List<string> inputWords)
         {
@@ -345,11 +345,69 @@ namespace VFileManager
             else
                 output.PrintMessage(Areas.CommandInfoLine, Messages.UnSuccess);
             Console.ReadKey();
+            Refresh(settings.LastPath);
 
             return isSucces;
         }
 
 
+        /// <summary>Удаление каталога в указанном расположении</summary>
+        /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
+        public bool DirDelete(List<string> inputWords)
+        {
+            bool isSucces = false;
+
+            //Проверяем количество введенных аргументов
+            if (inputWords.Count < 2)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongArguments);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            //Проверяем на то, что заданный путь не состоит только из символов '.','/','\'
+            //Чтобы избежать конфликтных ситуаций с удалением каталогов выше текущего уровня
+            bool isPathGood = false;
+            foreach(char symbol in inputWords[1])
+            {
+                if (symbol != '.' && symbol != '/' && symbol != '\\')
+                    isPathGood = true;
+            }
+            if (!isPathGood)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+
+            //Извлекаем имя файла каталога удаляем
+            //Преобразуем путь к нему в асолютный (если необходимо)
+            string sourceDirName = filesHandler.MakeFullPath(settings.LastPath, filesHandler.FindPath(inputWords, 1));
+
+            //Проверить существует ли объект по пути источника
+            if (!filesHandler.IsDirExist(sourceDirName))
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                Console.ReadKey();
+                return isSucces;
+            }
+
+            //Удаляем файл
+            isSucces = filesHandler.DirDelete(sourceDirName);
+
+            if (isSucces)
+            {
+                output.PrintMessage(Areas.CommandInfoLine, Messages.Success);
+                Refresh(settings.LastPath);
+            }
+            else
+                output.PrintMessage(Areas.CommandInfoLine, Messages.UnSuccess);
+            Console.ReadKey();
+            Refresh(settings.LastPath);
+
+            return isSucces;
+        }
 
         #endregion
     }
