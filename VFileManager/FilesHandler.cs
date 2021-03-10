@@ -36,7 +36,7 @@ namespace VFileManager
         /// <returns>Строку с найденым путем или пустую строку если путь не найден</returns>
         public string FindPath(List<string> words, int number)
         {
-            string path = null;//Здесь будет найденный путь
+            string path = string.Empty;//Здесь будет найденный путь
 
             if (number < words.Count) //Есть ли в списке слово под нужным индексом
             {
@@ -255,6 +255,11 @@ namespace VFileManager
                 fileInfo.Add(messages[Messages.CreationDate] + info.CreationTime);
                 fileInfo.Add(messages[Messages.Attributes] + info.Attributes);
             }
+            else
+            {
+                fileInfo.Add(messages[Messages.PathNotExist] + path);
+            }
+
 
         }
 
