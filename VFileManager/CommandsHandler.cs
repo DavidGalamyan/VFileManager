@@ -23,6 +23,7 @@ namespace VFileManager
         Delete,//удаление файла
         DirDelete,//удаление каталога
         Exit,//Выход из программы
+        Version,//Показать версию приложения
         WrongCommand,//Неправильная комманда
     }
 
@@ -54,6 +55,7 @@ namespace VFileManager
             { "del", Commands.Delete },
             { "ddel", Commands.DirDelete },
             { "exit", Commands.Exit },
+            { "version", Commands.Version },
         };
 
         /// <summary>Словарь тектовых ключей комманд</summary>
@@ -499,6 +501,13 @@ namespace VFileManager
             Refresh(settings.LastPath);
 
             return isSucces;
+        }
+
+        public void Version()
+        {
+            output.PrintMessage(Areas.CommandInfoLine, Messages.Version, settings.Version);
+            Console.ReadKey();
+
         }
 
         #endregion

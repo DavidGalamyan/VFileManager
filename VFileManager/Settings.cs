@@ -54,6 +54,14 @@ namespace VFileManager
             } 
         }
 
+        public string Version
+        {
+            get
+            {
+                return stringSettings[SettingsKeys.Version];
+            }
+        }
+
         /// <summary>Ширина окна приложения</summary>
         public int AppWidth
         {
@@ -266,6 +274,7 @@ namespace VFileManager
                 try
                 {
                     parameters = JsonSerializer.Deserialize<List<Parameter>>(File.ReadAllText(settingsFileName));
+                    //Распихиваем содержимое конфига по настройкам
                     ReadSettings(parameters);
                 }
                 catch
@@ -292,6 +301,8 @@ namespace VFileManager
         /// <param name="parameters">Список с текстовым представлением параметров и их значений</param>
         private void ReadSettings(List<Parameter> parameters)
         {
+            //Сбрасываем номер версии для проверки фала настроек в дальнейшем
+            stringSettings[SettingsKeys.Version] = string.Empty;
 
             foreach (Parameter param in parameters)
             {
@@ -321,10 +332,10 @@ namespace VFileManager
 
             //Проверка некоторых параметров на валидность
             //!TODO добавить больше проверок
-            if (numericSettings[SettingsKeys.AppWidth] < APP_WIDTH)//Ширина приложения
-                numericSettings[SettingsKeys.AppWidth] = APP_WIDTH;
-            if (numericSettings[SettingsKeys.AppHeight] < APP_HEIGHT)//Высота приложения
-                numericSettings[SettingsKeys.AppHeight] = APP_HEIGHT;
+            if (numericSettings[SettingsKeys.AppWidth] < Properties.Settings.Default.AppWidth)//Ширина приложения
+                numericSettings[SettingsKeys.AppWidth] = Properties.Settings.Default.AppWidth;
+            if (numericSettings[SettingsKeys.AppHeight] < Properties.Settings.Default.AppHeight)//Высота приложения
+                numericSettings[SettingsKeys.AppHeight] = Properties.Settings.Default.AppHeight;
             if (numericSettings[SettingsKeys.CommandAreaLine] > numericSettings[SettingsKeys.AppHeight] - 2)//Положение командной строки
                 numericSettings[SettingsKeys.CommandAreaLine] = numericSettings[SettingsKeys.AppHeight] - 2;
             if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 4)//Положение информационной строки

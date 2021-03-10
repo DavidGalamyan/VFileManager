@@ -174,6 +174,20 @@ namespace VFileManager
             Console.Write(message);
         }
 
+        /// <summary>Выводит сообщение с заданной области</summary>
+        /// <param name="area">ОБласть экрана в которой нужно вывести сообщение</param>
+        /// <param name="message">Ключ в словаре сообщений</param>
+        public void PrintMessage(Areas area, Messages message, string message_tail)
+        {
+            if (messages.ContainsKey(message))
+            {
+                ClearArea(area);
+                (int row, _) = GetAreaRows(area);
+                Console.SetCursorPosition(1, row);
+                Console.Write(messages[message] + message_tail);
+            }
+        }
+
         //!TODO переделать
         /// <summary>Выводит на экран справку по коммандам</summary>
         public void PrintManual()

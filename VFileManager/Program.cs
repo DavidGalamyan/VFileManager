@@ -118,6 +118,10 @@ namespace VFileManager
                             commands.DirDelete(inputWords);
                             break;
 
+                        case Commands.Version://Показать версию приложения
+                            commands.Version();
+                            break;
+
                         case Commands.Exit://Выход
                             isExit = true;
                             break;
