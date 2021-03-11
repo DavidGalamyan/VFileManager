@@ -16,6 +16,11 @@ namespace VFileManager
         /// <summary>Имя файла с настройками</summary>
         private string settingsFileName;
 
+        /// <summary>Логгер</summary>
+        private Logger logger;
+        /// <summary>База текстовых сообщений</summary>
+        private MessagesBase messages = new MessagesBase();
+
         /// <summary>Ключи для словаря числовых настроек</summary>
         private enum SettingsKeys
         {
@@ -40,6 +45,25 @@ namespace VFileManager
         #endregion
 
         #region ---- PROPERTIES ----
+
+        /// <summary>Ссылка на логгер</summary>
+        public Logger Logger
+        {
+            get
+            {
+                return logger;
+            }
+        }
+
+        /// <summary>Ссылка на базу сообщений</summary>
+        public MessagesBase Messages
+        {
+            get
+            {
+                return messages;
+            }
+        }
+
 
         /// <summary>Имя параметра</summary>
         public string LastPath 
@@ -200,6 +224,8 @@ namespace VFileManager
         {
             this.settingsFileName = settingsFileName;
             InitSettings();
+            string logFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "errors", $"{AppDomain.CurrentDomain.FriendlyName}.log");
+            logger = new Logger(logFileName);
         }
 
         #endregion
@@ -256,8 +282,9 @@ namespace VFileManager
             {
                 File.WriteAllText(settingsFileName, line);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |SaveSettings: *{e.Message}");
                 //!TODO сделать обработку исключения
             }
 
@@ -277,8 +304,9 @@ namespace VFileManager
                     //Распихиваем содержимое конфига по настройкам
                     ReadSettings(parameters);
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |LoadSettings: *{e.Message}");
                     //!TODO не удалось прочитать файл
                 }
             }
@@ -324,8 +352,9 @@ namespace VFileManager
                     }
 
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |ReadSettings: *{e.Message}");
                     //!TODO если такого ключа нет среди настроек
                 }
             }

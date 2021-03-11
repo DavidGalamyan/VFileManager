@@ -20,14 +20,12 @@ namespace VFileManager
 
         /// <summary>Настройки приложения</summary>
         private static Settings settings = new Settings(settingsFile);
-        /// <summary>База текстовых сообщений</summary>
-        private static MessagesBase messages = new MessagesBase();
         /// <summary>Вывод на экран</summary>
-        private static Output output = new Output(settings, messages);
+        private static Output output = new Output(settings);
         /// <summary>Обработка ввода</summary>
-        private static Input input = new Input(settings, messages, output);
+        private static Input input = new Input(settings, output);
         /// <summary>Обработчик комманд</summary>
-        private static CommandsHandler commands = new CommandsHandler(settings, messages, output);
+        private static CommandsHandler commands = new CommandsHandler(settings, output);
 
 
         #endregion
@@ -122,8 +120,13 @@ namespace VFileManager
                             commands.Version();
                             break;
 
+                        case Commands.Errors://Показать список ошибок
+                            commands.Errors();
+                            break;
+
                         case Commands.Exit://Выход
                             isExit = true;
+                            commands.AppExit();
                             break;
 
                         case Commands.WrongCommand://Неправильная команда

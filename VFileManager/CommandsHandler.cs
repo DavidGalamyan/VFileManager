@@ -20,8 +20,9 @@ namespace VFileManager
         DirCopy,//Копирование каталога
         Move,//Перемещение файла
         DirMove,//Перемещение каталога
-        Delete,//удаление файла
-        DirDelete,//удаление каталога
+        Delete,//Удаление файла
+        DirDelete,//Удаление каталога
+        Errors,//Вывод списка ошибок
         Exit,//Выход из программы
         Version,//Показать версию приложения
         WrongCommand,//Неправильная комманда
@@ -30,9 +31,9 @@ namespace VFileManager
     /// <summary>Аргументы для комманд</summary>
     public enum Arguments
     {
-        Page,//номер страницы
-        Level,//количество уровней (для вывода дерева каталогов)
-        Back,//номер страницы
+        Page,//Номер страницы
+        Level,//Количество уровней (для вывода дерева каталогов)
+        Back,//Назаж
     }
 
     #endregion
@@ -54,6 +55,7 @@ namespace VFileManager
             { "dmove", Commands.DirMove },
             { "del", Commands.Delete },
             { "ddel", Commands.DirDelete },
+            { "log", Commands.Errors },
             { "exit", Commands.Exit },
             { "version", Commands.Version },
         };
@@ -76,6 +78,8 @@ namespace VFileManager
         private Output output;
         /// <summary>Работа с файлами</summary>
         FilesHandler filesHandler;
+        /// <summary>Логгер</summary>
+        Logger logger;
 
         /// <summary>Сюда будет помещаться список каталогов</summary>
         private List<string> dirList = new List<string>();
@@ -88,11 +92,12 @@ namespace VFileManager
 
         #region ---- CONSTRUCTORS ----
 
-        public CommandsHandler(Settings settings, MessagesBase messages, Output output)
+        public CommandsHandler(Settings settings, Output output)
         {
             this.settings = settings;
             this.output = output;
-            this.filesHandler = new FilesHandler(settings, messages);
+            this.filesHandler = new FilesHandler(settings);
+            this.logger = settings.Logger;
         }
 
         #endregion
@@ -294,9 +299,10 @@ namespace VFileManager
                     output.PrintMessage(Areas.CommandInfoLine, Messages.FileExist);
                 }
             }
-            catch (Exception excp)
+            catch (Exception e)
             {
-                output.PrintMessage(Areas.CommandInfoLine, excp.Message);
+                output.PrintMessage(Areas.CommandInfoLine, e.Message);
+                logger.LogWrite($"Method: |FileCopyMove: *{e.Message}");
             }
 
             if (isSucces)
@@ -387,9 +393,10 @@ namespace VFileManager
                     output.PrintMessage(Areas.CommandInfoLine, Messages.DirExist);
                 }
             }
-            catch (Exception excp)
+            catch (Exception e)
             {
-                output.PrintMessage(Areas.CommandInfoLine, excp.Message);
+                output.PrintMessage(Areas.CommandInfoLine, e.Message);
+                logger.LogWrite($"Method: |DirCopyMove: *{e.Message}");
             }
 
             if (isSucces)
@@ -509,6 +516,19 @@ namespace VFileManager
             Console.ReadKey();
 
         }
+
+        public void AppExit()
+        {
+            logger.AppClose();
+            settings.SaveSettings();
+        }
+
+        public void Errors()
+        {
+            output.PrintList(Areas.DirList, logger.GetErrorsList());
+        }
+
+
 
         #endregion
     }

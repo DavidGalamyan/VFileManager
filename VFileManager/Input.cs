@@ -27,10 +27,10 @@ namespace VFileManager
 
         #region ---- CONSTRUCTOR ----
 
-        public Input(Settings settings, MessagesBase messages, Output output)
+        public Input(Settings settings, Output output)
         {
             this.settings = settings;
-            this.messages = messages;
+            this.messages = settings.Messages;
             this.output = output;
         }
 

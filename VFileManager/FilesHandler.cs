@@ -13,15 +13,17 @@ namespace VFileManager
 
         Settings settings;
         MessagesBase messages;
+        Logger logger;
 
         #endregion
 
         #region ---- CONSTRUCTORS ----
 
-        public FilesHandler(Settings settings, MessagesBase messages)
+        public FilesHandler(Settings settings)
         {
             this.settings = settings;
-            this.messages = messages;
+            this.messages = settings.Messages;
+            this.logger = settings.Logger;
         }
 
         #endregion
@@ -74,8 +76,9 @@ namespace VFileManager
                     FileInfo tempFileInfo = new FileInfo(fileName);
                     isExist = tempFileInfo.Exists;
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |IsFileExist: *{e.Message}");
                     isExist = false;
                 }
             return isExist;
@@ -188,16 +191,18 @@ namespace VFileManager
                                         SeekDirectoryRecursion(path + "\\" + dir, dirList, maxLevel, graphLine + "   ", level + 1);
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
-                                //если каталог недоступен, то ничего не делаем (пока)
+                                logger.LogWrite($"Method: |SeekDirectoryRecursion: *{e.Message}");
+                                //!TODO если каталог недоступен, то ничего не делаем (пока)
                             }
                         }
                     }
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |SeekDirectoryRecursion: *{e.Message}");
                 //!TODO если каталог недоступен, то ничего не делаем (пока)
             }
 
@@ -225,8 +230,9 @@ namespace VFileManager
                     fileList.Add(file.Name);
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |SeekDirectoryForFiles : *{e.Message}");
                 //!TODO если каталог недоступен, то ничего не делаем (пока)
             }
 
@@ -314,8 +320,9 @@ namespace VFileManager
 
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileCopy : *{e.Message}");
                 //!TODO если ошибка при копировании
                 isSucces = false;
             }
@@ -348,8 +355,9 @@ namespace VFileManager
 
                 File.Move(sourceFileName, destFileName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileMove : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }
@@ -371,8 +379,9 @@ namespace VFileManager
             {
                 File.Delete(sourceFileName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileDelete : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }
@@ -412,8 +421,9 @@ namespace VFileManager
                 {
                     Directory.Delete(sourceDir.FullName);
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |DirCopyMove : *{e.Message}");
                     isSuccess = false;
                     //!TODO
                 }
@@ -454,8 +464,9 @@ namespace VFileManager
             {
                 Directory.Delete(sourceDirName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |DirDelete : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }

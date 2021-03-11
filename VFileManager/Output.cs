@@ -59,10 +59,10 @@ namespace VFileManager
 
         #region ---- CONSTRUCTORS ----
 
-        public Output(Settings settings, MessagesBase messages)
+        public Output(Settings settings)
         {
             this.settings = settings;
-            this.messages = messages;
+            this.messages = settings.Messages;
         }
 
         #endregion
