@@ -358,6 +358,7 @@ namespace VFileManager
                     {
                         isValueValid = int.TryParse(param.Value, out value);//Пытаемся получить числовое значение
                         if (isValueValid)//Если получилось, то заносим настройку в словарь
+                            value = Math.Abs(value);//Убираем отрицательные значения, т.к. их в принципе быть не должно
                             numericSettings[key] = value;
                     }
 
@@ -369,15 +370,21 @@ namespace VFileManager
             }
 
             //Проверка некоторых параметров на валидность
-            //!TODO добавить больше проверок
             if (numericSettings[SettingsKeys.AppWidth] < Properties.Settings.Default.AppWidth)//Ширина приложения
                 numericSettings[SettingsKeys.AppWidth] = Properties.Settings.Default.AppWidth;
             if (numericSettings[SettingsKeys.AppHeight] < Properties.Settings.Default.AppHeight)//Высота приложения
                 numericSettings[SettingsKeys.AppHeight] = Properties.Settings.Default.AppHeight;
             if (numericSettings[SettingsKeys.CommandAreaLine] > numericSettings[SettingsKeys.AppHeight] - 2)//Положение командной строки
                 numericSettings[SettingsKeys.CommandAreaLine] = numericSettings[SettingsKeys.AppHeight] - 2;
-            if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 4)//Положение информационной строки
-                numericSettings[SettingsKeys.InfoAreaLine] = numericSettings[SettingsKeys.CommandAreaLine] - 4;
+            if (numericSettings[SettingsKeys.CommandInfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 2)//Положение информационной строки
+                numericSettings[SettingsKeys.CommandInfoAreaLine] = numericSettings[SettingsKeys.CommandAreaLine] - 2;
+            if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandInfoAreaLine] - 4)//Положение окна информации
+                numericSettings[SettingsKeys.InfoAreaLine] = numericSettings[SettingsKeys.CommandInfoAreaLine] - 4;
+            if (numericSettings[SettingsKeys.FileListAreaLine] > numericSettings[SettingsKeys.InfoAreaLine] - 4)//Положение списка файлов
+                numericSettings[SettingsKeys.FileListAreaLine] = numericSettings[SettingsKeys.InfoAreaLine] - 4;
+            numericSettings[SettingsKeys.DirListAreaLine] = Properties.Settings.Default.DirListAreaLine;//Окно дерева каталогов
+            if (numericSettings[SettingsKeys.FileListAreaLine] < numericSettings[SettingsKeys.DirListAreaLine] + 10)//Положение списка файлов
+                numericSettings[SettingsKeys.FileListAreaLine] = numericSettings[SettingsKeys.DirListAreaLine] + 10;
 
             //Проверка дефолтного каталога
             if (!new DirectoryInfo(stringSettings[SettingsKeys.LastPath]).Exists)
