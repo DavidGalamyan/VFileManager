@@ -9,12 +9,20 @@ using System.Text.Json.Serialization;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс хранит и оперирует настройки приложения.
+    /// </summary>
     class Settings
     {
         #region ---- FIELDS ----
 
         /// <summary>Имя файла с настройками</summary>
         private string settingsFileName;
+
+        /// <summary>Логгер</summary>
+        private Logger logger;
+        /// <summary>База текстовых сообщений</summary>
+        private MessagesBase messages = new MessagesBase();
 
         /// <summary>Ключи для словаря числовых настроек</summary>
         private enum SettingsKeys
@@ -40,6 +48,25 @@ namespace VFileManager
         #endregion
 
         #region ---- PROPERTIES ----
+
+        /// <summary>Ссылка на логгер</summary>
+        public Logger Logger
+        {
+            get
+            {
+                return logger;
+            }
+        }
+
+        /// <summary>Ссылка на базу сообщений</summary>
+        public MessagesBase Messages
+        {
+            get
+            {
+                return messages;
+            }
+        }
+
 
         /// <summary>Имя параметра</summary>
         public string LastPath 
@@ -196,16 +223,25 @@ namespace VFileManager
 
         #region ---- CONSTRUCTOR ----
 
+        /// <summary>
+        /// Конструктор 
+        /// </summary>
+        /// <param name="settingsFileName">Имя файла хранящего настройки</param>
         public Settings(string settingsFileName)
         {
             this.settingsFileName = settingsFileName;
             InitSettings();
+            string logFileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "errors", $"{AppDomain.CurrentDomain.FriendlyName}.log");
+            logger = new Logger(logFileName);
         }
 
         #endregion
 
         #region ---- METHODS ----
 
+        /// <summary>
+        /// Инициализация дефолтных значений настроек приложения
+        /// </summary>
         private void InitSettings()
         {
             /// <summary>Словарь содержащий текстовые настройки приложения</summary>
@@ -256,14 +292,17 @@ namespace VFileManager
             {
                 File.WriteAllText(settingsFileName, line);
             }
-            catch
+            catch (Exception e)
             {
-                //!TODO сделать обработку исключения
+                logger.LogWrite($"Method: |SaveSettings: *{e.Message}");
             }
 
         }
 
-        /// <summary>Чтение настроек из файла</summary>
+        /// <summary>Чтение настроек из файла
+        /// Если файл отсутствует, то он создается заново с дефолтными настройками
+        /// Если версия приложения в файле настроки не соответствует текущей версии приложения, то 
+        /// файл настроек пересоздается с дефолтными настройками</summary>
         public void LoadSettings()
         {
             //Список для работы с настройками приложения
@@ -277,9 +316,9 @@ namespace VFileManager
                     //Распихиваем содержимое конфига по настройкам
                     ReadSettings(parameters);
                 }
-                catch
+                catch (Exception e)
                 {
-                    //!TODO не удалось прочитать файл
+                    logger.LogWrite($"Method: |LoadSettings: *{e.Message}");
                 }
             }
             else
@@ -293,7 +332,6 @@ namespace VFileManager
                 InitSettings();
                 SaveSettings();
             }
-
 
         }
 
@@ -320,26 +358,33 @@ namespace VFileManager
                     {
                         isValueValid = int.TryParse(param.Value, out value);//Пытаемся получить числовое значение
                         if (isValueValid)//Если получилось, то заносим настройку в словарь
+                            value = Math.Abs(value);//Убираем отрицательные значения, т.к. их в принципе быть не должно
                             numericSettings[key] = value;
                     }
 
                 }
-                catch
+                catch (Exception e)
                 {
-                    //!TODO если такого ключа нет среди настроек
+                    logger.LogWrite($"Method: |ReadSettings: *{e.Message}");
                 }
             }
 
             //Проверка некоторых параметров на валидность
-            //!TODO добавить больше проверок
             if (numericSettings[SettingsKeys.AppWidth] < Properties.Settings.Default.AppWidth)//Ширина приложения
                 numericSettings[SettingsKeys.AppWidth] = Properties.Settings.Default.AppWidth;
             if (numericSettings[SettingsKeys.AppHeight] < Properties.Settings.Default.AppHeight)//Высота приложения
                 numericSettings[SettingsKeys.AppHeight] = Properties.Settings.Default.AppHeight;
             if (numericSettings[SettingsKeys.CommandAreaLine] > numericSettings[SettingsKeys.AppHeight] - 2)//Положение командной строки
                 numericSettings[SettingsKeys.CommandAreaLine] = numericSettings[SettingsKeys.AppHeight] - 2;
-            if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 4)//Положение информационной строки
-                numericSettings[SettingsKeys.InfoAreaLine] = numericSettings[SettingsKeys.CommandAreaLine] - 4;
+            if (numericSettings[SettingsKeys.CommandInfoAreaLine] > numericSettings[SettingsKeys.CommandAreaLine] - 2)//Положение информационной строки
+                numericSettings[SettingsKeys.CommandInfoAreaLine] = numericSettings[SettingsKeys.CommandAreaLine] - 2;
+            if (numericSettings[SettingsKeys.InfoAreaLine] > numericSettings[SettingsKeys.CommandInfoAreaLine] - 4)//Положение окна информации
+                numericSettings[SettingsKeys.InfoAreaLine] = numericSettings[SettingsKeys.CommandInfoAreaLine] - 4;
+            if (numericSettings[SettingsKeys.FileListAreaLine] > numericSettings[SettingsKeys.InfoAreaLine] - 4)//Положение списка файлов
+                numericSettings[SettingsKeys.FileListAreaLine] = numericSettings[SettingsKeys.InfoAreaLine] - 4;
+            numericSettings[SettingsKeys.DirListAreaLine] = Properties.Settings.Default.DirListAreaLine;//Окно дерева каталогов
+            if (numericSettings[SettingsKeys.FileListAreaLine] < numericSettings[SettingsKeys.DirListAreaLine] + 10)//Положение списка файлов
+                numericSettings[SettingsKeys.FileListAreaLine] = numericSettings[SettingsKeys.DirListAreaLine] + 10;
 
             //Проверка дефолтного каталога
             if (!new DirectoryInfo(stringSettings[SettingsKeys.LastPath]).Exists)

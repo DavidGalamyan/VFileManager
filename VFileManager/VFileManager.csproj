@@ -48,6 +48,7 @@
     <Compile Include="CommandsHandler.cs" />
     <Compile Include="FilesHandler.cs" />
     <Compile Include="Input.cs" />
+    <Compile Include="Logger.cs" />
     <Compile Include="MessagesBase.cs" />
     <Compile Include="Output.cs" />
     <Compile Include="Program.cs" />

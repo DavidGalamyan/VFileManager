@@ -20,6 +20,7 @@ namespace VFileManager
         WrongDestPath,
         FileExist,
         DirExist,
+        PathNotExist,
         CommandSymbol,
         ListMessage,
         FileInfo,
@@ -35,6 +36,9 @@ namespace VFileManager
 
     #endregion
 
+    /// <summary>
+    /// Класс содержит список текстовых сообщений применяемых в программе
+    /// </summary>
     class MessagesBase
     {
         #region ---- TEXTS ----
@@ -51,6 +55,7 @@ namespace VFileManager
             { Messages.WrongDestPath, "Неправильный путь к цели. Повторите ввод." },
             { Messages.FileExist, "Файл уже существует." },
             { Messages.DirExist, "Каталог уже существует." },
+            { Messages.PathNotExist, "Путь не существует." },
             { Messages.CommandSymbol, ":>" },
             { Messages.ListMessage, "pageUp/pageDown (or arrows) - change pages. Q/Esc - stop." },
             { Messages.FileInfo, "Информация о файле: " },
@@ -72,8 +77,11 @@ namespace VFileManager
         private List<string> manual = new List<string>
         {
             { "Список комманд:" },
+            { string.Empty },
             { "?help    |*- вывод справки" },
-            { "?dirs    |[<path>] [-p <int>] [-l <int>] *- вывод списка каталогов" },
+            { "?exit    |*- выход из программы" },
+            { string.Empty },
+            { "?dir     |[<path>] [-p <int>] [-l <int>] *- вывод списка каталогов" },
             { "?        |path *- путь к выводимому каталогу; |.. *- возврат на уровень назад" },
             { "?        |-p <int> *- номер страницы, default=1" },
             { "?        |-l <int> *- количество уровней каталогов, default=2" },
@@ -82,23 +90,34 @@ namespace VFileManager
             { "?        |-p <int> *- номер страницы, default=1" },
             { "?info    |[<path>] *- вывод информации о каталоге/файле" },
             { "?        |path *- путь к каталогу/файлу информацию о котором необходимо вывести на экран" },
+            { string.Empty },
             { "?copy    |<file name>, <destination dir> *- копирование файла" },
             { "?move    |<file name>, <destination dir> *- перемещение файла" },
             { "?del     |<file name>*- удалить файл" },
             { "?        |file name *- путь к файлу который нужно скопировать/переместить или удалить" },
             { "?        |destination dir *- путь к каталогу куда нужно скопировать или переместить указанный файл" },
+            { string.Empty },
             { "?dcopy   |<dir name>, <destination dir> *- копирование файла" },
             { "?dmove   |<dir name>, <destination dir> *- перемещение файла" },
             { "?ddel    |<dir name> *- удалить файл" },
             { "?        |dir name *- путь к каталогу который нужно скопировать/переместить или удалить" },
             { "?        |destination dir *- путь к каталогу куда нужно скопировать или переместить указанный объект" },
+            { string.Empty },
+            { "?        *Имена файлов/каталогов могут задаваться как абсолютно, так и относительно текущего каталога." },
+            { "?        *Имена файлов/каталогов содержащие пробелы, должны заключаться в двойные кавычки (\")" },
+            { string.Empty },
             { "?version |*- вывод информации о версии приложения" },
-            { "?exit    |*- выход из программы" },
         };
 
         #endregion
 
         #region ---- INDEXER ----
+
+        /// <summary>
+        /// Индексатор для доступа к значениям словаря по ключу
+        /// </summary>
+        /// <param name="key">Ключ словаря, по которому надо извлеч значение</param>
+        /// <returns>Значение из словаря соответствующее ключу</returns>
         public string this[Messages key]
         {
             get

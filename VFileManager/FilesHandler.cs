@@ -7,21 +7,26 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс, производит работу с фалами/каталогами и их путями
+    /// </summary>
     class FilesHandler
     {
         #region ---- FIELDS ----
 
         Settings settings;
         MessagesBase messages;
+        Logger logger;
 
         #endregion
 
         #region ---- CONSTRUCTORS ----
 
-        public FilesHandler(Settings settings, MessagesBase messages)
+        public FilesHandler(Settings settings)
         {
             this.settings = settings;
-            this.messages = messages;
+            this.messages = settings.Messages;
+            this.logger = settings.Logger;
         }
 
         #endregion
@@ -36,7 +41,7 @@ namespace VFileManager
         /// <returns>Строку с найденым путем или пустую строку если путь не найден</returns>
         public string FindPath(List<string> words, int number)
         {
-            string path = null;//Здесь будет найденный путь
+            string path = string.Empty;//Здесь будет найденный путь
 
             if (number < words.Count) //Есть ли в списке слово под нужным индексом
             {
@@ -74,8 +79,9 @@ namespace VFileManager
                     FileInfo tempFileInfo = new FileInfo(fileName);
                     isExist = tempFileInfo.Exists;
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |IsFileExist: *{e.Message}");
                     isExist = false;
                 }
             return isExist;
@@ -140,7 +146,7 @@ namespace VFileManager
         /// <param name="graphLine">строка содержащая графическую структуру каталогов
         /// формируется во время работы метода</param>
         /// <param name="level">уровень глубины катлогов от изначального</param>
-        public void SeekDirectoryRecursion(string path, List<string> dirList, int maxLevel = 0, string graphLine = "", int level = 1)
+        public void SeekDirectoryTree(string path, List<string> dirList, int maxLevel = 0, string graphLine = "", int level = 1)
         {
             if (maxLevel == 0) maxLevel = settings.MaxLevelDefault;//Если максимальная глубина не задана, то ограничиваем дефолтным значением
 
@@ -183,26 +189,27 @@ namespace VFileManager
                                 if (currentDirContent.Length > 0)
                                 {
                                     if (dir != dirContent[dirContent.Length - 1])
-                                        SeekDirectoryRecursion(path + "\\" + dir, dirList, maxLevel, graphLine + "│  ", level + 1);
+                                        SeekDirectoryTree(path + "\\" + dir, dirList, maxLevel, graphLine + "│  ", level + 1);
                                     else
-                                        SeekDirectoryRecursion(path + "\\" + dir, dirList, maxLevel, graphLine + "   ", level + 1);
+                                        SeekDirectoryTree(path + "\\" + dir, dirList, maxLevel, graphLine + "   ", level + 1);
                                 }
                             }
-                            catch
+                            catch (Exception e)
                             {
-                                //если каталог недоступен, то ничего не делаем (пока)
+                                logger.LogWrite($"Method: |SeekDirectoryRecursion: *{e.Message}");
+                                //!TODO если каталог недоступен, то ничего не делаем (пока)
                             }
                         }
                     }
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |SeekDirectoryRecursion: *{e.Message}");
                 //!TODO если каталог недоступен, то ничего не делаем (пока)
             }
 
         }
-
 
         /// <summary>
         /// Сканирует файлы в указанном каталоге и помещает их в список
@@ -225,13 +232,13 @@ namespace VFileManager
                     fileList.Add(file.Name);
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |SeekDirectoryForFiles : *{e.Message}");
                 //!TODO если каталог недоступен, то ничего не делаем (пока)
             }
 
         }
-
 
         /// <summary>
         /// Заносит информацию о файле/каталоге в список для вывода на экран
@@ -255,6 +262,11 @@ namespace VFileManager
                 fileInfo.Add(messages[Messages.CreationDate] + info.CreationTime);
                 fileInfo.Add(messages[Messages.Attributes] + info.Attributes);
             }
+            else
+            {
+                fileInfo.Add(messages[Messages.PathNotExist] + path);
+            }
+
 
         }
 
@@ -309,8 +321,9 @@ namespace VFileManager
 
                 }
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileCopy : *{e.Message}");
                 //!TODO если ошибка при копировании
                 isSucces = false;
             }
@@ -343,8 +356,9 @@ namespace VFileManager
 
                 File.Move(sourceFileName, destFileName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileMove : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }
@@ -366,8 +380,9 @@ namespace VFileManager
             {
                 File.Delete(sourceFileName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |FileDelete : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }
@@ -375,7 +390,14 @@ namespace VFileManager
             return isSucces;
         }
 
-
+        /// <summary>
+        /// Копирует/перемещает указанный каталог
+        /// </summary>
+        /// <param name="sourceDirName">Каталог который необходимо скопировать/переместить</param>
+        /// <param name="destDirName">Каталог куда нужно скопировать/переместить</param>
+        /// <param name="isMove">true, если нужно переместить,
+        /// false, если нужно копировать</param>
+        /// <returns></returns>
         public bool DirCopyMove(string sourceDirName, string destDirName, bool isMove = false)
         {
             bool isSuccess = true;
@@ -407,8 +429,9 @@ namespace VFileManager
                 {
                     Directory.Delete(sourceDir.FullName);
                 }
-                catch
+                catch (Exception e)
                 {
+                    logger.LogWrite($"Method: |DirCopyMove : *{e.Message}");
                     isSuccess = false;
                     //!TODO
                 }
@@ -449,8 +472,9 @@ namespace VFileManager
             {
                 Directory.Delete(sourceDirName);
             }
-            catch
+            catch (Exception e)
             {
+                logger.LogWrite($"Method: |DirDelete : *{e.Message}");
                 isSucces = false;
                 //!TODO
             }
