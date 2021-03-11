@@ -9,6 +9,9 @@ using System.Text.Json.Serialization;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс хранит и оперирует настройки приложения.
+    /// </summary>
     class Settings
     {
         #region ---- FIELDS ----
@@ -220,6 +223,10 @@ namespace VFileManager
 
         #region ---- CONSTRUCTOR ----
 
+        /// <summary>
+        /// Конструктор 
+        /// </summary>
+        /// <param name="settingsFileName">Имя файла хранящего настройки</param>
         public Settings(string settingsFileName)
         {
             this.settingsFileName = settingsFileName;
@@ -232,6 +239,9 @@ namespace VFileManager
 
         #region ---- METHODS ----
 
+        /// <summary>
+        /// Инициализация дефолтных значений настроек приложения
+        /// </summary>
         private void InitSettings()
         {
             /// <summary>Словарь содержащий текстовые настройки приложения</summary>
@@ -285,12 +295,14 @@ namespace VFileManager
             catch (Exception e)
             {
                 logger.LogWrite($"Method: |SaveSettings: *{e.Message}");
-                //!TODO сделать обработку исключения
             }
 
         }
 
-        /// <summary>Чтение настроек из файла</summary>
+        /// <summary>Чтение настроек из файла
+        /// Если файл отсутствует, то он создается заново с дефолтными настройками
+        /// Если версия приложения в файле настроки не соответствует текущей версии приложения, то 
+        /// файл настроек пересоздается с дефолтными настройками</summary>
         public void LoadSettings()
         {
             //Список для работы с настройками приложения
@@ -307,7 +319,6 @@ namespace VFileManager
                 catch (Exception e)
                 {
                     logger.LogWrite($"Method: |LoadSettings: *{e.Message}");
-                    //!TODO не удалось прочитать файл
                 }
             }
             else
@@ -321,7 +332,6 @@ namespace VFileManager
                 InitSettings();
                 SaveSettings();
             }
-
 
         }
 
@@ -355,7 +365,6 @@ namespace VFileManager
                 catch (Exception e)
                 {
                     logger.LogWrite($"Method: |ReadSettings: *{e.Message}");
-                    //!TODO если такого ключа нет среди настроек
                 }
             }
 

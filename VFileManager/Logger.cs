@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс, позволяющий логгировать ошибки и исключения в лог-файл
+    /// </summary>
     class Logger
     {
         #region ---- FIELDS ----
@@ -14,18 +17,21 @@ namespace VFileManager
         /// <summary>Имя файла хранящего сообщения лога</summary>
         private string logFileName;
 
-        private StreamWriter logFile;
-
         #endregion
 
         #region ---- CONSTRUCTOR ----
+
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="logFileName">Имя лог файла</param>
         public Logger(string logFileName)
         {
             this.logFileName = logFileName;
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
-                logFile = new StreamWriter(new FileStream(logFileName, FileMode.Create));
+                StreamWriter logFile = new StreamWriter(new FileStream(logFileName, FileMode.Create));
                 logFile.Close();
             }
             catch (Exception e)
@@ -44,6 +50,10 @@ namespace VFileManager
 
         #region ---- METHODS ----
 
+        /// <summary>
+        /// Записывает сообщение в лог-файл
+        /// </summary>
+        /// <param name="message">Сообщение</param>
         public void LogWrite(string message)
         {
             try
@@ -61,11 +71,18 @@ namespace VFileManager
 
         }
 
+        /// <summary>
+        /// Записывает в лог-файл информацию о закрытии приложения
+        /// </summary>
         public void AppClose()
         {
             LogWrite("[Application shutdown: " + DateTime.Now.ToString("F", new System.Globalization.CultureInfo("ru-Ru")) + "]");
         }
 
+        /// <summary>
+        /// Извлекает информацию из лог-файла в список, для вывода на экран
+        /// </summary>
+        /// <returns>Список содержащий информацию из лог-файла</returns>
         public List<string> GetErrorsList()
         {
             List<string> errorsList = new List<string>();

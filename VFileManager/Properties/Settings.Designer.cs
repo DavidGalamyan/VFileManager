@@ -25,7 +25,7 @@ namespace VFileManager.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("V0.93")]
+        [global::System.Configuration.DefaultSettingValueAttribute("V0.93.01")]
         public string Version {
             get {
                 return ((string)(this["Version"]));

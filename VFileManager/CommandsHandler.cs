@@ -38,6 +38,9 @@ namespace VFileManager
 
     #endregion
 
+    /// <summary>
+    /// Класс выполняет функции приложения в соответствии с командами от пользователя
+    /// </summary>
     class CommandsHandler
     {
         #region ---- DICTIONARIES ----
@@ -92,6 +95,11 @@ namespace VFileManager
 
         #region ---- CONSTRUCTORS ----
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="settings">Настройки приложения</param>
+        /// <param name="output">Вывод на экран</param>
         public CommandsHandler(Settings settings, Output output)
         {
             this.settings = settings;
@@ -118,7 +126,7 @@ namespace VFileManager
         }
 
         /// <summary>
-        /// Проверяет список слов на наличие заданного аргумента и возвращает его значение
+        /// Проверяет список слов на наличие заданного аргумента и возвращает его числовое значение
         /// </summary>
         /// <param name="inputWords">Список слов для анализа</param>
         /// <param name="argument">Искомый аргумент</param>
@@ -148,7 +156,6 @@ namespace VFileManager
 
         #region ---- APPLICATION COMMANDS ----
 
-
         /// <summary>
         /// Обновляет информацию во всех трех окнах на экране
         /// </summary>
@@ -157,7 +164,7 @@ namespace VFileManager
         {
             //Вывод дерева последнего просматриваемого каталога
             dirList.Clear();
-            filesHandler.SeekDirectoryRecursion(path, dirList);
+            filesHandler.SeekDirectoryTree(path, dirList);
             output.PrintList(Areas.DirList, dirList, 1, false);
 
             //Вывод содержимого последнего просматриваемого каталога
@@ -191,7 +198,7 @@ namespace VFileManager
             if (filesHandler.IsDirExist(fullPath))//Если путь существует, то сканируем его и выводим на экран
             {
                 dirList.Clear();
-                filesHandler.SeekDirectoryRecursion(fullPath, dirList, maxLevel);
+                filesHandler.SeekDirectoryTree(fullPath, dirList, maxLevel);
                 output.PrintList(Areas.DirList, dirList, page);
                 settings.LastPath = fullPath;
                 settings.SaveSettings();
@@ -211,7 +218,8 @@ namespace VFileManager
             string path = filesHandler.FindPath(inputWords, 1);//Каталог который сканируем
             string fullPath = filesHandler.MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            //На тот случай если один из аргументов был принят за путь к каталогу
+            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))
             {
                 fullPath = settings.LastPath;//То устанавливаем предыдущий путь
             }
@@ -236,7 +244,8 @@ namespace VFileManager
             string path = filesHandler.FindPath(inputWords, 1);//Каталог который сканируем
             string fullPath = filesHandler.MakeFullPath(settings.LastPath, path);//Преобразуем путь к нему в асолютный (если необходимо)
 
-            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))//На тот случай если один из аргументов был принят за путь к каталогу
+            //На тот случай если один из аргументов был принят за путь к каталогу
+            if (!filesHandler.IsDirExist(fullPath) && arguments.ContainsKey(path))
             {
                 fullPath = settings.LastPath;//То устанавливаем предыдущий путь
             }
@@ -313,6 +322,12 @@ namespace VFileManager
             return isSucces;
         }
 
+        /// <summary>
+        /// Копирование/перемещение каталога по указанному пути
+        /// </summary>
+        /// <param name="inputWords">Список слов введенных пользователем</param>
+        /// <param name="command">Команда Copy или Move</param>
+        /// <returns>true, в случае успешного завершения операции</returns>
         public bool DirCopyMove(List<string> inputWords, Commands command)
         {
             bool isSucces = false;
@@ -327,33 +342,12 @@ namespace VFileManager
 
             //Проверяем на то, что заданный путь не состоит только из символов '.','/','\'
             //Чтобы избежать конфликтных ситуаций с удалением каталогов выше текущего уровня
-            bool isPathGood = false;
-            foreach (char symbol in inputWords[1])
-            {
-                if (symbol != '.' && symbol != '/' && symbol != '\\')
-                    isPathGood = true;
-            }
-            if (!isPathGood)
+            if(IsStringContainBackPathsOnly(inputWords[1]) || IsStringContainBackPathsOnly(inputWords[2]))
             {
                 output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
                 Console.ReadKey();
                 return isSucces;
             }
-
-            isPathGood = false;
-            foreach (char symbol in inputWords[2])
-            {
-                if (symbol != '.' && symbol != '/' && symbol != '\\')
-                    isPathGood = true;
-            }
-            if (!isPathGood)
-            {
-                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
-                Console.ReadKey();
-                return isSucces;
-            }
-
-
 
             //Извлекаем имя каталога который копируем
             //Преобразуем путь к нему в асолютный (если необходимо)
@@ -362,8 +356,6 @@ namespace VFileManager
             //Извлекаем путь к каталогу куда копируем каталог
             //Преобразуем путь к нему в асолютный (если необходимо)
             string destDirName = filesHandler.MakeFullPath(settings.LastPath, filesHandler.FindPath(inputWords, 2));
-
-
 
             try
             {
@@ -407,8 +399,6 @@ namespace VFileManager
             return isSucces;
         }
 
-
-
         /// <summary>Удаление файла в указанном расположении</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
         public bool FileDelete(List<string> inputWords)
@@ -451,7 +441,6 @@ namespace VFileManager
             return isSucces;
         }
 
-
         /// <summary>Удаление каталога в указанном расположении</summary>
         /// <param name="inputWords">Список содержащий слова из ввода пользователя</param>
         public bool DirDelete(List<string> inputWords)
@@ -468,15 +457,9 @@ namespace VFileManager
 
             //Проверяем на то, что заданный путь не состоит только из символов '.','/','\'
             //Чтобы избежать конфликтных ситуаций с удалением каталогов выше текущего уровня
-            bool isPathGood = false;
-            foreach(char symbol in inputWords[1])
+            if (IsStringContainBackPathsOnly(inputWords[1]))
             {
-                if (symbol != '.' && symbol != '/' && symbol != '\\')
-                    isPathGood = true;
-            }
-            if (!isPathGood)
-            {
-                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongSourcePath);
+                output.PrintMessage(Areas.CommandInfoLine, Messages.WrongPath);
                 Console.ReadKey();
                 return isSucces;
             }
@@ -510,6 +493,9 @@ namespace VFileManager
             return isSucces;
         }
 
+        /// <summary>
+        /// Вывод информации о версии программы
+        /// </summary>
         public void Version()
         {
             output.PrintMessage(Areas.CommandInfoLine, Messages.Version, settings.Version);
@@ -517,19 +503,49 @@ namespace VFileManager
 
         }
 
+        /// <summary>
+        /// Действия перед выходом из программы
+        /// </summary>
         public void AppExit()
         {
+            //Запись в лог ошибок информации о закрытии приложения
             logger.AppClose();
+            //Сохранение настроек
             settings.SaveSettings();
         }
 
+        /// <summary>
+        /// Вывод на экран лога с ошибками
+        /// </summary>
         public void Errors()
         {
             output.PrintList(Areas.DirList, logger.GetErrorsList());
         }
 
+        #endregion
+
+        #region ---- ADDITIONAL METHODS ----
+
+        /// <summary>
+        /// Проверяет на то, состоит ли заданная строка только из символов '.''/' и '\'
+        /// </summary>
+        /// <param name="path">Проверяемая строка</param>
+        /// <returns>true, если строка состоит только из символов точки и слешей.</returns>
+        private bool IsStringContainBackPathsOnly(string path)
+        {
+            bool isStringContainBackPathsOnly = true;
+            foreach (char symbol in path)
+            {
+                if (symbol != '.' && symbol != '/' && symbol != '\\')
+                    isStringContainBackPathsOnly = false;
+            }
+            return isStringContainBackPathsOnly;
+
+        }
+
 
 
         #endregion
+
     }
 }

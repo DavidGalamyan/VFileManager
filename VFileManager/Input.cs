@@ -6,27 +6,38 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс обрабатывает ввод пользователя
+    /// </summary>
     class Input
     {
         #region ---- STRING CONSTANTS ----
 
         /// <summary>Стандартный разделитель между словаме в строке ввода</summary>
-        private const char delimiterShort = ' ';
-        /// <summary>Разделитель для длинных имен файлов</summary>
+        private const char delimiterStandart = ' ';
+        /// <summary>Разделитель для имен файлов/каталогов с пробелами</summary>
         private const char delimiterLong = '"';
 
         #endregion
 
         #region ---- FIELDS ----
 
+        /// <summary>Настройки приложения</summary>
         Settings settings;
+        /// <summary>База текстовых сообщений</summary>
         MessagesBase messages;
+        /// <summary>Вывод на экран</summary>
         Output output;
 
         #endregion
 
         #region ---- CONSTRUCTOR ----
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="settings">Настройки приложения</param>
+        /// <param name="output">Вывод на экран</param>
         public Input(Settings settings, Output output)
         {
             this.settings = settings;
@@ -50,7 +61,7 @@ namespace VFileManager
             bool isQuoteOpened = false;//Флаг того, что были пройдены открывающие кавычки
             for (int i = 0; i < input.Length; i++)
             {
-                if (input[i] != delimiterShort && input[i] != delimiterLong)//Если текущий символ не разделитель
+                if (input[i] != delimiterStandart && input[i] != delimiterLong)//Если текущий символ не разделитель
                 {
                     word.Append(input[i]);//Записываем его в буфер
                     if (i == input.Length - 1)//Если это был конец строки то записываем буфер в список

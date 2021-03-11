@@ -20,6 +20,9 @@ namespace VFileManager
 
     #endregion
 
+    /// <summary>
+    /// Класс выводит интерфейс и различную информацию на экран
+    /// </summary>
     class Output
     {
         #region ---- CONSTANTS ----
@@ -34,6 +37,10 @@ namespace VFileManager
             Background = (int)ConsoleColor.Black,
         }
 
+        /// <summary>
+        /// Символы для расцветки выводимых сообщений
+        /// Выбраны такие символы, которые не могут содержаться в именах файлов/каталогов
+        /// </summary>
         public enum ColorSymbols
         {
             Standart = (int)'*',
@@ -41,7 +48,10 @@ namespace VFileManager
             Argument = (int)'|',
         }
 
-        Dictionary<char, Colors> colorCodes = new Dictionary<char, Colors>()
+        /// <summary>
+        /// Цвета для расцветки выводимого текста, согласно спецсимволам
+        /// </summary>
+        private readonly Dictionary<char, Colors> colorCodes = new Dictionary<char, Colors>()
         {
             {(char)ColorSymbols.Standart, Colors.Standart},
             {(char)ColorSymbols.Command, Colors.Command},
@@ -52,13 +62,19 @@ namespace VFileManager
 
         #region ---- FIELDS ----
 
+        /// <summary>Настройки приложения</summary>
         Settings settings;
+        /// <summary>База текстовых сообщений</summary>
         MessagesBase messages;
 
         #endregion
 
         #region ---- CONSTRUCTORS ----
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="settings">Настройки приложения</param>
         public Output(Settings settings)
         {
             this.settings = settings;
@@ -104,50 +120,7 @@ namespace VFileManager
             return (firstRow, lastRow);
         }
 
-        /// <summary>Очищает заданную область интерфейса</summary>
-        /// <param name="area">Очищаемая область</param>
-        private void ClearArea(Areas area)
-        {
-            //int firstRow = 0;
-            //int lastRow = 0;
-            (int firstRow, int lastRow) = GetAreaRows(area);
-
-            for (int i = firstRow; i < lastRow; i++)
-                ClearLine(1, i, settings.AppWidth - 2);
-
-            //очистка информации о странице
-            Console.SetCursorPosition(0, lastRow);
-            Console.ForegroundColor = (ConsoleColor)Colors.Frame;
-            switch(area)
-            {
-                case Areas.DirList:
-                case Areas.FileList:
-                case Areas.Info:
-                case Areas.CommandInfoLine:
-                    PrintFrameLine("╠═╣");
-                    break;
-                case Areas.CommandLine:
-                    PrintFrameLine("╚═╝");
-                    break;
-            }
-            //PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
-            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-
-        }
-
-        /// <summary>Очищает в консоли указанную строку</summary>
-        /// <param name="column">Номер столбца с которого нужно очистить строку</param>
-        /// <param name="row">Номер строки которую нужно очистить</param>
-        /// <param name="length">Длина строки которую нужно очистить</param>
-        private void ClearLine(int column, int row, int length)
-        {
-            Console.SetCursorPosition(column, row);
-            for (int i = 0; i < length; i++)
-            {
-                if (i <= settings.AppWidth)
-                    Console.Write(" ");
-            }
-        }
+        #region -- PRINT SINGLE MESSAGES --
 
         /// <summary>Выводит сообщение с заданной области</summary>
         /// <param name="area">ОБласть экрана в которой нужно вывести сообщение</param>
@@ -188,19 +161,12 @@ namespace VFileManager
             }
         }
 
-        //!TODO переделать
-        /// <summary>Выводит на экран справку по коммандам</summary>
-        public void PrintManual()
-        {
-            PrintList(Areas.DirList, messages.GetManual());
-        }
-
         /// <summary>Выводит на экран строку символов, раскрашивая ее с помощью спец-символоов</summary>
         /// <param name="line">Строка для вывода на экран</param>
-        private void PrintColorLine(string line)
+        private void PrintColorMessage(string line)
         {
             Console.ForegroundColor = (ConsoleColor)Colors.Standart;
-            foreach(char chr in line)
+            foreach (char chr in line)
             {
                 if (colorCodes.ContainsKey(chr))
                     Console.ForegroundColor = (ConsoleColor)colorCodes[chr];
@@ -209,6 +175,16 @@ namespace VFileManager
             }
             Console.ForegroundColor = (ConsoleColor)Colors.Standart;
         }
+
+        /// <summary>Выводит на экран справку по коммандам</summary>
+        public void PrintManual()
+        {
+            PrintList(Areas.DirList, messages.GetManual());
+        }
+
+        #endregion
+
+        #region -- INTERFACE --
 
         /// <summary>Выводит на экран рамку приложения</summary>
         public void PrintMainFrame()
@@ -266,6 +242,60 @@ namespace VFileManager
             }
         }
 
+        /// <summary>Очищает заданную область интерфейса</summary>
+        /// <param name="area">Очищаемая область</param>
+        private void ClearArea(Areas area)
+        {
+            //int firstRow = 0;
+            //int lastRow = 0;
+            (int firstRow, int lastRow) = GetAreaRows(area);
+
+            for (int i = firstRow; i < lastRow; i++)
+                ClearLine(1, i, settings.AppWidth - 2);
+
+            //очистка информации о странице
+            Console.SetCursorPosition(0, lastRow);
+            Console.ForegroundColor = (ConsoleColor)Colors.Frame;
+            switch (area)
+            {
+                case Areas.DirList:
+                case Areas.FileList:
+                case Areas.Info:
+                case Areas.CommandInfoLine:
+                    PrintFrameLine("╠═╣");
+                    break;
+                case Areas.CommandLine:
+                    PrintFrameLine("╚═╝");
+                    break;
+            }
+            //PrintFrameLine((lastRow == settings.AppHeight - 1) ? "╚═╝" : "╠═╣");
+            Console.ForegroundColor = (ConsoleColor)Colors.Standart;
+
+        }
+
+        /// <summary>Очищает в консоли указанную строку</summary>
+        /// <param name="column">Номер столбца с которого нужно очистить строку</param>
+        /// <param name="row">Номер строки которую нужно очистить</param>
+        /// <param name="length">Длина строки которую нужно очистить</param>
+        private void ClearLine(int column, int row, int length)
+        {
+            Console.SetCursorPosition(column, row);
+            for (int i = 0; i < length; i++)
+            {
+                if (i <= settings.AppWidth)
+                    Console.Write(" ");
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Выводит на экран список текстовых строк в заданном окне, с пэйджингом
+        /// </summary>
+        /// <param name="area">Область (окно) приложения в которое нужно вывести список</param>
+        /// <param name="list">Список для вывода</param>
+        /// <param name="page">Номер страницы с которой нужно начать вывод</param>
+        /// <param name="isTurnPages">Включать ли литсалку страниц</param>
         public void PrintList(Areas area, List<string> list, int page = 1, bool isTurnPages = true)
         {
             ClearArea(area);
@@ -296,7 +326,7 @@ namespace VFileManager
                         {
                             Console.SetCursorPosition(1, i - number + firstRow + 1);
                             //Console.Write(list[i + 1].PadRight(settings.AppWidth - 2));
-                            PrintColorLine(list[i + 1].PadRight(settings.AppWidth - 2));
+                            PrintColorMessage(list[i + 1].PadRight(settings.AppWidth - 2));
                         }
                         else//Если индек за пределами списка, то просто очищаем следующие строки
                         {

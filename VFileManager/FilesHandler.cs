@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace VFileManager
 {
+    /// <summary>
+    /// Класс, производит работу с фалами/каталогами и их путями
+    /// </summary>
     class FilesHandler
     {
         #region ---- FIELDS ----
@@ -143,7 +146,7 @@ namespace VFileManager
         /// <param name="graphLine">строка содержащая графическую структуру каталогов
         /// формируется во время работы метода</param>
         /// <param name="level">уровень глубины катлогов от изначального</param>
-        public void SeekDirectoryRecursion(string path, List<string> dirList, int maxLevel = 0, string graphLine = "", int level = 1)
+        public void SeekDirectoryTree(string path, List<string> dirList, int maxLevel = 0, string graphLine = "", int level = 1)
         {
             if (maxLevel == 0) maxLevel = settings.MaxLevelDefault;//Если максимальная глубина не задана, то ограничиваем дефолтным значением
 
@@ -186,9 +189,9 @@ namespace VFileManager
                                 if (currentDirContent.Length > 0)
                                 {
                                     if (dir != dirContent[dirContent.Length - 1])
-                                        SeekDirectoryRecursion(path + "\\" + dir, dirList, maxLevel, graphLine + "│  ", level + 1);
+                                        SeekDirectoryTree(path + "\\" + dir, dirList, maxLevel, graphLine + "│  ", level + 1);
                                     else
-                                        SeekDirectoryRecursion(path + "\\" + dir, dirList, maxLevel, graphLine + "   ", level + 1);
+                                        SeekDirectoryTree(path + "\\" + dir, dirList, maxLevel, graphLine + "   ", level + 1);
                                 }
                             }
                             catch (Exception e)
@@ -207,7 +210,6 @@ namespace VFileManager
             }
 
         }
-
 
         /// <summary>
         /// Сканирует файлы в указанном каталоге и помещает их в список
@@ -237,7 +239,6 @@ namespace VFileManager
             }
 
         }
-
 
         /// <summary>
         /// Заносит информацию о файле/каталоге в список для вывода на экран
@@ -389,7 +390,14 @@ namespace VFileManager
             return isSucces;
         }
 
-
+        /// <summary>
+        /// Копирует/перемещает указанный каталог
+        /// </summary>
+        /// <param name="sourceDirName">Каталог который необходимо скопировать/переместить</param>
+        /// <param name="destDirName">Каталог куда нужно скопировать/переместить</param>
+        /// <param name="isMove">true, если нужно переместить,
+        /// false, если нужно копировать</param>
+        /// <returns></returns>
         public bool DirCopyMove(string sourceDirName, string destDirName, bool isMove = false)
         {
             bool isSuccess = true;
