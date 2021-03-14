@@ -83,7 +83,7 @@ namespace VFileManager
 
         #endregion
 
-        #region ---- PRINT METHODS ----
+        #region ---- AREA PARAMETERS CALCULATING ----
 
         /// <summary>Возвращает номера первой и последней строки для заданной области окна приложения</summary>
         /// <param name="area">Область приложения (окно)</param>
@@ -120,7 +120,9 @@ namespace VFileManager
             return (firstRow, lastRow);
         }
 
-        #region -- PRINT SINGLE MESSAGES --
+        #endregion
+
+        #region ---- PRINT SINGLE MESSAGES ----
 
         /// <summary>Выводит сообщение с заданной области</summary>
         /// <param name="area">ОБласть экрана в которой нужно вывести сообщение</param>
@@ -184,7 +186,7 @@ namespace VFileManager
 
         #endregion
 
-        #region -- INTERFACE --
+        #region ---- MAIN WINDOW OUTPUT METHODS ----
 
         /// <summary>Выводит на экран рамку приложения</summary>
         public void PrintMainFrame()
@@ -289,6 +291,8 @@ namespace VFileManager
 
         #endregion
 
+        #region ---- PRINT LIST WITH PAGING ----
+
         /// <summary>
         /// Выводит на экран список текстовых строк в заданном окне, с пэйджингом
         /// </summary>
@@ -371,7 +375,6 @@ namespace VFileManager
             Console.CursorVisible = true;
 
         }
-
 
         #endregion
     }
