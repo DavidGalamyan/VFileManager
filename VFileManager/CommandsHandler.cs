@@ -546,6 +546,5 @@ namespace VFileManager
 
 
         #endregion
-
     }
 }

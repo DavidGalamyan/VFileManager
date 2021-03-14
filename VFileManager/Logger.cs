@@ -109,7 +109,5 @@ namespace VFileManager
         }
 
         #endregion
-
-
     }
 }
